@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AuthService } from "../domain/auth/auth.service";
+import { AuthService } from "../domain";
 
 export class AuthController {
   private authService: AuthService;
