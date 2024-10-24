@@ -1,14 +1,9 @@
 import cors from "cors";
 import express, { Request, Response } from "express";
 import { PORT } from "./config";
-import { connectDB } from "./db/sequelize";
-import { syncUserModel } from "./domain/user/user.service";
+import { authRoutes, userRoutes } from "./routes";
 
 const app = express();
-
-connectDB().then(() => {
-  syncUserModel();
-});
 
 app.use(
   cors({
@@ -20,9 +15,14 @@ app.use(
 
 app.use(express.json());
 
+// Rota de teste
 app.get("/", (req: Request, res: Response) => {
-  res.json({ message: "Bem vindo a API de Auth" });
+  res.json({ message: "Bem vindo à API de Auth" });
 });
+
+// Registro das rotas
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
