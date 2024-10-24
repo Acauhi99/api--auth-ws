@@ -1,12 +1,37 @@
-import User from "./user.model";
+import { UserCreateFieldsDTO } from "./dtos";
+import { User } from "./user.model";
+import { UserRepository } from "./user.repository";
 
-const syncUserModel = async () => {
-  try {
-    await User.sync({ force: false });
-    console.log("Modelo User sincronizado com sucesso.");
-  } catch (error) {
-    console.error("Erro ao sincronizar o modelo User:", error);
+export class UserService {
+  private userRepository: UserRepository;
+
+  constructor() {
+    this.userRepository = new UserRepository();
   }
-};
 
-export { syncUserModel };
+  async getAllUsers(): Promise<User[]> {
+    return this.userRepository.getAllUsers();
+  }
+
+  async getUserById(userId: string): Promise<User | null> {
+    return this.userRepository.getUserById(userId);
+  }
+
+  async patchUser(
+    userId: string,
+    updatedData: Partial<UserCreateFieldsDTO>
+  ): Promise<User | null> {
+    return this.userRepository.patchUser(userId, updatedData);
+  }
+
+  async updateUser(
+    userId: string,
+    updatedData: UserCreateFieldsDTO
+  ): Promise<User | null> {
+    return this.userRepository.updateUser(userId, updatedData);
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    return this.userRepository.deleteUser(userId);
+  }
+}
