@@ -1,6 +1,6 @@
 import kuid from "kuid";
 import { DataTypes, Model } from "sequelize";
-import { sequelize } from "../../db/sequelize";
+import { sequelize } from "../../sequelize";
 
 export class User extends Model {
   public id!: string;
