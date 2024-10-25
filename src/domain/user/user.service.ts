@@ -31,7 +31,7 @@ export class UserService {
     return this.userRepository.updateUser(userId, updatedData);
   }
 
-  async deleteUser(userId: string): Promise<void> {
+  async deleteUser(userId: string): Promise<boolean> {
     return this.userRepository.deleteUser(userId);
   }
 }

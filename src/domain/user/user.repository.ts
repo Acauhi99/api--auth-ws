@@ -14,7 +14,7 @@ export class UserRepository {
     try {
       return await User.findByPk(userId);
     } catch (error) {
-      throw new Error("Erro ao buscar usuário");
+      throw new Error("Usuário não encontrado");
     }
   }
 
@@ -52,13 +52,15 @@ export class UserRepository {
     }
   }
 
-  async deleteUser(userId: string): Promise<void> {
+  async deleteUser(userId: string): Promise<boolean> {
     try {
       const user = await User.findByPk(userId);
 
-      if (!user) return;
+      if (!user) return false;
 
       await user.destroy();
+
+      return true;
     } catch (error) {
       throw new Error("Erro ao deletar usuário");
     }
