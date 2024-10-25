@@ -9,42 +9,77 @@ export class UserController {
   }
 
   getAllUsers = async (req: Request, res: Response): Promise<Response> => {
-    const users = await this.userService.getAllUsers();
+    try {
+      const users = await this.userService.getAllUsers();
 
-    return res.status(200).json(users);
+      return res.status(200).json(users);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
   };
 
   getUserById = async (req: Request, res: Response): Promise<Response> => {
-    const userId = req.params.id;
-    const user = await this.userService.getUserById(userId);
+    try {
+      const userId = req.params.id;
+      const user = await this.userService.getUserById(userId);
 
-    if (!user) {
-      return res.status(404).json({ message: "Usuário não encontrado" });
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      return res.status(200).json(user);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
     }
-
-    return res.status(200).json(user);
   };
 
   patchUser = async (req: Request, res: Response): Promise<Response> => {
-    const userId = req.params.id;
-    const updatedData = req.body;
-    const updatedUser = await this.userService.patchUser(userId, updatedData);
+    try {
+      const userId = req.params.id;
+      const updatedData = req.body;
+      const updatedUser = await this.userService.patchUser(userId, updatedData);
 
-    return res.status(200).json(updatedUser);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      return res.status(200).json(updatedUser);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
   };
 
   updateUser = async (req: Request, res: Response): Promise<Response> => {
-    const userId = req.params.id;
-    const updatedData = req.body;
-    const updatedUser = await this.userService.updateUser(userId, updatedData);
+    try {
+      const userId = req.params.id;
+      const updatedData = req.body;
+      const updatedUser = await this.userService.updateUser(
+        userId,
+        updatedData
+      );
 
-    return res.status(200).json(updatedUser);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      return res.status(200).json(updatedUser);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
   };
 
   deleteUser = async (req: Request, res: Response): Promise<Response> => {
-    const userId = req.params.id;
-    await this.userService.deleteUser(userId);
+    try {
+      const userId = req.params.id;
+      const userDeleted = await this.userService.deleteUser(userId);
 
-    return res.status(204).send();
+      if (!userDeleted) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
   };
 }

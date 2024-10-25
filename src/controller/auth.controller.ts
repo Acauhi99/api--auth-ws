@@ -9,16 +9,24 @@ export class AuthController {
   }
 
   register = async (req: Request, res: Response): Promise<Response> => {
-    const userData = req.body;
-    const newUser = await this.authService.register(userData);
+    try {
+      const userData = req.body;
+      const newUser = await this.authService.register(userData);
 
-    return res.status(201).json(newUser);
+      return res.status(201).json(newUser);
+    } catch (error) {
+      return res.status(400).json({ message: (error as Error).message });
+    }
   };
 
   login = async (req: Request, res: Response): Promise<Response> => {
-    const { email, password } = req.body;
-    const token = await this.authService.login(email, password);
+    try {
+      const { email, password } = req.body;
+      const token = await this.authService.login(email, password);
 
-    return res.status(200).json({ token });
+      return res.status(200).json({ token });
+    } catch (error) {
+      return res.status(401).json({ message: (error as Error).message });
+    }
   };
 }
