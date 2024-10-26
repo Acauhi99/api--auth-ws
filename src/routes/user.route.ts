@@ -13,4 +13,4 @@ userRoutes.patch("/:id", asyncHandler(userController.patchUser));
 userRoutes.put("/:id", asyncHandler(userController.updateUser));
 userRoutes.delete("/:id", asyncHandler(userController.deleteUser));
 
-export default userRoutes;
+export { userRoutes };

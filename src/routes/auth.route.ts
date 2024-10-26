@@ -8,4 +8,4 @@ const authController = new AuthController();
 authRoutes.post("/register", asyncHandler(authController.register));
 authRoutes.post("/login", asyncHandler(authController.login));
 
-export default authRoutes;
+export { authRoutes };
