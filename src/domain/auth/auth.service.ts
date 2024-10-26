@@ -11,7 +11,7 @@ export class AuthService {
     this.authRepository = new AuthRepository();
   }
 
-  async register(userData: UserCreateFieldsDTO): Promise<UserCreateFieldsDTO> {
+  async register(userData: UserCreateFieldsDTO): Promise<void> {
     const existingUser = await this.authRepository.findByEmail(userData.email);
 
     if (existingUser) {
@@ -25,7 +25,7 @@ export class AuthService {
       password: hashedPassword,
     };
 
-    return this.authRepository.save(newUser);
+    this.authRepository.save(newUser);
   }
 
   async login(email: string, password: string): Promise<string> {

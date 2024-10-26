@@ -11,9 +11,9 @@ export class AuthController {
   register = async (req: Request, res: Response): Promise<Response> => {
     try {
       const userData = req.body;
-      const newUser = await this.authService.register(userData);
+      await this.authService.register(userData);
 
-      return res.status(201).json(newUser);
+      return res.status(201);
     } catch (error) {
       return res.status(400).json({ message: (error as Error).message });
     }

@@ -12,11 +12,9 @@ export class AuthRepository {
     }
   }
 
-  async save(userData: UserCreateFieldsDTO): Promise<User> {
+  async save(userData: UserCreateFieldsDTO): Promise<void> {
     try {
-      const newUser = await User.create(userData as any);
-
-      return newUser;
+      await User.create(userData as any);
     } catch (error) {
       throw new Error("Erro ao criar usuário");
     }
