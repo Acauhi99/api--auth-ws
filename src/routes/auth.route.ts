@@ -8,4 +8,7 @@ const authController = new AuthController();
 authRoutes.post("/register", asyncHandler(authController.register));
 authRoutes.post("/login", asyncHandler(authController.login));
 
+authRoutes.get("/github", asyncHandler(authController.githubAuth));
+authRoutes.get("/github/callback", asyncHandler(authController.githubCallback));
+
 export { authRoutes };
