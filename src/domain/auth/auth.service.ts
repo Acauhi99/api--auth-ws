@@ -15,7 +15,7 @@ export class AuthService {
     const existingUser = await this.authRepository.findByEmail(userData.email);
 
     if (existingUser) {
-      throw new Error("User already exists");
+      throw new Error("Usuário já cadastrado");
     }
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -32,16 +32,16 @@ export class AuthService {
     const user = await this.authRepository.findByEmail(email);
 
     if (!user) {
-      throw new Error("Invalid credentials");
+      throw new Error("Credenciais inválidas");
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new Error("Invalid credentials");
+      throw new Error("Credenciais inválidas");
     }
 
     if (!JWT_SECRET) {
-      throw new Error("JWT_SECRET is not defined");
+      throw new Error("JWT_SECRET não definido");
     }
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
