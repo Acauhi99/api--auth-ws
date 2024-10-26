@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { UserController } from "../controller";
-import { asyncHandler } from "../middlewares/asyncHandler";
+import { asyncHandler, authenticateJWT } from "../middlewares";
 
 const userRoutes = Router();
 const userController = new UserController();
+
+userRoutes.use(authenticateJWT);
 
 userRoutes.get("/", asyncHandler(userController.getAllUsers));
 userRoutes.get("/:id", asyncHandler(userController.getUserById));
