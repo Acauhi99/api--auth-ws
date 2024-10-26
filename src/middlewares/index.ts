@@ -1,2 +1,2 @@
 export { asyncHandler } from "./asyncHandler";
-export * from "./authenticateJWT";
+export * from "./authenticateHandler";
