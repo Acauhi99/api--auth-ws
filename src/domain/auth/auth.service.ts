@@ -1,14 +1,29 @@
+import axios from "axios";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../../config";
+import {
+  GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET,
+  GITHUB_REDIRECT_URI,
+  JWT_SECRET,
+} from "../../config";
 import { UserCreateFieldsDTO } from "../user/dtos";
 import { AuthRepository } from "./auth.repository";
 
+interface GitHubAccessTokenResponse {
+  access_token: string;
+}
+
 export class AuthService {
   private authRepository: AuthRepository;
+  private githubAxios;
 
   constructor() {
     this.authRepository = new AuthRepository();
+    this.githubAxios = axios.create({
+      baseURL: "https://github.com/login/oauth",
+      headers: { Accept: "application/json" },
+    });
   }
 
   async register(userData: UserCreateFieldsDTO): Promise<void> {
@@ -49,5 +64,19 @@ export class AuthService {
     });
 
     return token;
+  }
+
+  async getGitHubAccessToken(code: string): Promise<string> {
+    const response = await this.githubAxios.post<GitHubAccessTokenResponse>(
+      "/access_token",
+      {
+        client_id: GITHUB_CLIENT_ID,
+        client_secret: GITHUB_CLIENT_SECRET,
+        code,
+        redirect_uri: GITHUB_REDIRECT_URI,
+      }
+    );
+
+    return response.data.access_token;
   }
 }
