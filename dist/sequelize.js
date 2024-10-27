@@ -13,7 +13,7 @@ exports.sequelize = exports.connectDB = void 0;
 const sequelize_1 = require("sequelize");
 const sequelize = new sequelize_1.Sequelize({
     dialect: "sqlite",
-    storage: "./src/infra/db/development.sqlite",
+    storage: "./infra/db/development.sqlite",
     logging: false,
 });
 exports.sequelize = sequelize;
