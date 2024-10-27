@@ -1,56 +1,37 @@
-import axios from "axios";
 import { RequestHandler } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
-import { JWT_SECRET } from "../config";
+import { AuthStrategy, BearerStrategy, GitHubStrategy } from "./strategies";
 
-export interface DecodedToken extends JwtPayload {
-  id: string;
-  email: string;
-  password: string;
-}
-
-export interface GithubUser {
-  login: string;
-  id: number;
-  avatar_url: string;
-  name: string;
-  email?: string;
-}
+const strategies: { [key: string]: AuthStrategy } = {
+  Bearer: new BearerStrategy(),
+  GitHub: new GitHubStrategy(),
+};
 
 export const authenticateHandler: RequestHandler = async (req, res, next) => {
-  const githubUrl = "https://api.github.com/user";
-
   const authHeader = req.header("Authorization");
   if (!authHeader) {
-    res.status(401).json({ message: "Token not provided" });
+    res.status(401).json({ message: "Token não fornecido" });
     return;
   }
 
   const [scheme, token] = authHeader.split(" ");
   if (!token) {
-    res.status(401).json({ message: "Token format invalid" });
+    res.status(401).json({ message: "Formato de token inválido" });
+    return;
+  }
+
+  const strategy = strategies[scheme];
+  if (!strategy) {
+    res.status(401).json({ message: "Esquema de autenticação inválido" });
     return;
   }
 
   try {
-    if (scheme === "Bearer") {
-      const decoded = jwt.verify(token, JWT_SECRET as string) as DecodedToken;
-      req.user = decoded;
-      return next();
-    } else if (scheme === "GitHub") {
-      const githubResponse = await axios.get<GithubUser>(githubUrl, {
-        headers: { Authorization: `token ${token}` },
-      });
+    const user = await strategy.authenticate(token);
 
-      req.user = githubResponse.data;
+    req.user = user;
 
-      return next();
-    } else {
-      res.status(401).json({ message: "Invalid authentication scheme" });
-      return;
-    }
+    next();
   } catch (error) {
-    res.status(401).json({ message: "Invalid or expired token" });
-    return;
+    res.status(401).json({ message: "Token inválido ou expirado" });
   }
 };
