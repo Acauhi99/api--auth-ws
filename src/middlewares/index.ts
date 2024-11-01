@@ -1,2 +1,2 @@
-export { asyncHandler } from "./asyncHandler";
-export * from "./authenticateHandler";
+export * from "./async-handler.middleware";
+export * from "./authenticate-handler.middleware";
