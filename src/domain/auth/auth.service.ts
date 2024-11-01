@@ -7,7 +7,11 @@ import {
   GITHUB_REDIRECT_URI,
   JWT_SECRET,
 } from "../../config";
-import { UserCreateFieldsDTO } from "../user/dtos";
+import {
+  GitHubUserFieldsDTO,
+  GitHubUserResponseDTO,
+  UserCreateFieldsDTO,
+} from "../user/dtos";
 import { AuthRepository } from "./auth.repository";
 
 interface GitHubAccessTokenResponse {
@@ -27,6 +31,10 @@ export class AuthService {
   }
 
   async register(userData: UserCreateFieldsDTO): Promise<void> {
+    if (!userData.email || !userData.password) {
+      throw new Error("Email e senha são obrigatórios");
+    }
+
     const existingUser = await this.authRepository.findByEmail(userData.email);
 
     if (existingUser) {
@@ -78,5 +86,50 @@ export class AuthService {
     );
 
     return response.data.access_token;
+  }
+
+  async getGitHubUser(accessToken: string): Promise<GitHubUserResponseDTO> {
+    const response = await axios.get<GitHubUserResponseDTO>(
+      "https://api.github.com/user",
+      {
+        headers: {
+          Authorization: `token ${accessToken}`,
+        },
+      }
+    );
+    return response.data;
+  }
+
+  async loginWithGitHub(code: string): Promise<string> {
+    const accessToken = await this.getGitHubAccessToken(code);
+    const githubUser = await this.getGitHubUser(accessToken);
+
+    let user = await this.authRepository.findByGithubId(
+      githubUser.id.toString()
+    );
+
+    if (!user) {
+      const newUserData: GitHubUserFieldsDTO = {
+        firstName: githubUser.name?.split(" ")[0] || githubUser.login,
+        lastName: githubUser.name?.split(" ").slice(1).join(" ") || "",
+        email: githubUser.email || "",
+        githubId: githubUser.id.toString(),
+        avatarUrl: githubUser.avatar_url,
+      };
+
+      await this.authRepository.save(newUserData);
+
+      user = await this.authRepository.findByGithubId(githubUser.id.toString());
+    }
+
+    if (!JWT_SECRET) {
+      throw new Error("JWT_SECRET não definido");
+    }
+
+    const token = jwt.sign({ id: user!.id, email: user!.email }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    return token;
   }
 }
