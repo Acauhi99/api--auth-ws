@@ -4,10 +4,12 @@ import { sequelize } from "../../sequelize";
 
 export class User extends Model {
   public id!: string;
+  public githubId!: string;
   public firstName!: string;
   public lastName!: string;
   public email!: string;
   public password!: string;
+  public avatarUrl!: string;
   public birthDate!: Date;
 }
 
@@ -22,6 +24,14 @@ User.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    githubId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    avatarUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     lastName: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -33,11 +43,11 @@ User.init(
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     birthDate: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
     },
   },
   {
