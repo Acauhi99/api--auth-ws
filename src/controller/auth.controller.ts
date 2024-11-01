@@ -48,11 +48,8 @@ export class AuthController {
     }
 
     try {
-      const access_token = await this.authService.getGitHubAccessToken(
-        code as string
-      );
-
-      return res.status(200).json({ token: access_token });
+      const token = await this.authService.loginWithGitHub(code as string);
+      return res.status(200).json({ token });
     } catch (error) {
       return res
         .status(500)
