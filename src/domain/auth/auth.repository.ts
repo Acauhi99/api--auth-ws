@@ -19,4 +19,14 @@ export class AuthRepository {
       throw new Error("Erro ao criar usuário");
     }
   }
+
+  async findByGithubId(githubId: string): Promise<User | null> {
+    try {
+      const user = await User.findOne({ where: { githubId } });
+
+      return user;
+    } catch (error) {
+      throw new Error("Erro ao buscar usuário pelo GitHub ID");
+    }
+  }
 }
