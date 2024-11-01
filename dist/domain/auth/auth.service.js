@@ -28,6 +28,9 @@ class AuthService {
     }
     register(userData) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!userData.email || !userData.password) {
+                throw new Error("Email e senha são obrigatórios");
+            }
             const existingUser = yield this.authRepository.findByEmail(userData.email);
             if (existingUser) {
                 throw new Error("Usuário já cadastrado");
@@ -65,6 +68,42 @@ class AuthService {
                 redirect_uri: config_1.GITHUB_REDIRECT_URI,
             });
             return response.data.access_token;
+        });
+    }
+    getGitHubUser(accessToken) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield axios_1.default.get("https://api.github.com/user", {
+                headers: {
+                    Authorization: `token ${accessToken}`,
+                },
+            });
+            return response.data;
+        });
+    }
+    loginWithGitHub(code) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
+            const accessToken = yield this.getGitHubAccessToken(code);
+            const githubUser = yield this.getGitHubUser(accessToken);
+            let user = yield this.authRepository.findByGithubId(githubUser.id.toString());
+            if (!user) {
+                const newUserData = {
+                    firstName: ((_a = githubUser.name) === null || _a === void 0 ? void 0 : _a.split(" ")[0]) || githubUser.login,
+                    lastName: ((_b = githubUser.name) === null || _b === void 0 ? void 0 : _b.split(" ").slice(1).join(" ")) || "",
+                    email: githubUser.email || "",
+                    githubId: githubUser.id.toString(),
+                    avatarUrl: githubUser.avatar_url,
+                };
+                yield this.authRepository.save(newUserData);
+                user = yield this.authRepository.findByGithubId(githubUser.id.toString());
+            }
+            if (!config_1.JWT_SECRET) {
+                throw new Error("JWT_SECRET não definido");
+            }
+            const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email }, config_1.JWT_SECRET, {
+                expiresIn: "1h",
+            });
+            return token;
         });
     }
 }

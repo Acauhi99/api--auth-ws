@@ -14,7 +14,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.asyncHandler = void 0;
-var asyncHandler_1 = require("./asyncHandler");
-Object.defineProperty(exports, "asyncHandler", { enumerable: true, get: function () { return asyncHandler_1.asyncHandler; } });
-__exportStar(require("./authenticateHandler"), exports);
+__exportStar(require("./async-handler.middleware"), exports);
+__exportStar(require("./authenticate-handler.middleware"), exports);

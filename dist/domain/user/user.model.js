@@ -29,6 +29,14 @@ User.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
+    githubId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+    },
+    avatarUrl: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+    },
     lastName: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
@@ -40,11 +48,11 @@ User.init({
     },
     password: {
         type: sequelize_1.DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
     },
     birthDate: {
         type: sequelize_1.DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
     },
 }, {
     sequelize: sequelize_2.sequelize,

@@ -33,5 +33,16 @@ class AuthRepository {
             }
         });
     }
+    findByGithubId(githubId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = yield user_model_1.User.findOne({ where: { githubId } });
+                return user;
+            }
+            catch (error) {
+                throw new Error("Erro ao buscar usuário pelo GitHub ID");
+            }
+        });
+    }
 }
 exports.AuthRepository = AuthRepository;

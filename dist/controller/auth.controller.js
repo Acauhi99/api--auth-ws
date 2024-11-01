@@ -48,8 +48,8 @@ class AuthController {
                     .json({ message: "Código de autorização não fornecido" });
             }
             try {
-                const access_token = yield this.authService.getGitHubAccessToken(code);
-                return res.status(200).json({ token: access_token });
+                const token = yield this.authService.loginWithGitHub(code);
+                return res.status(200).json({ token });
             }
             catch (error) {
                 return res
