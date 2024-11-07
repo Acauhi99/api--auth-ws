@@ -3,7 +3,6 @@ export interface GitHubUserResponseDTO {
   login: string;
   name: string;
   email: string;
-  avatar_url: string;
 }
 
 export interface GitHubUserFieldsDTO {
@@ -11,5 +10,4 @@ export interface GitHubUserFieldsDTO {
   lastName: string;
   email: string;
   githubId: string;
-  avatarUrl: string;
 }
