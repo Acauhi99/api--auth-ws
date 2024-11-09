@@ -46,7 +46,3 @@ User.init(
     timestamps: true,
   }
 );
-
-(async () => {
-  await User.sync();
-})();

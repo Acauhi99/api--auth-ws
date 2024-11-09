@@ -1,19 +1,28 @@
 import { DataTypes, Model } from "sequelize";
 import { sequelize } from "../../sequelize";
-import { User } from "../user/user.model";
-import { Wallet } from "../wallet/wallet.model";
-import { Stock } from "../stock/stock.model";
+import { User } from "../user";
+import { Wallet } from "../wallet";
+import { Stock } from "../stock";
 import kuid from "kuid";
+
+export enum TransactionType {
+  BUY = "BUY",
+  SELL = "SELL",
+  DEPOSIT = "DEPOSIT",
+  WITHDRAWAL = "WITHDRAWAL",
+  DIVIDEND = "DIVIDEND",
+}
 
 export class Transaction extends Model {
   public id!: string;
-  public type!: string;
+  public type!: String;
   public amount!: number;
-  public quantity!: number | null;
-  public stockId!: string | null;
-  public walletId!: string;
+  public quantity!: number;
   public userId!: string;
-  public transactionDate!: Date;
+  public walletId!: string;
+  public stockId!: string;
+  public createdAt!: Date;
+  public updatedAt!: Date;
 }
 
 Transaction.init(
@@ -26,6 +35,20 @@ Transaction.init(
     type: {
       type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        isIn: {
+          args: [
+            [
+              TransactionType.BUY,
+              TransactionType.SELL,
+              TransactionType.DEPOSIT,
+              TransactionType.WITHDRAWAL,
+              TransactionType.DIVIDEND,
+            ],
+          ],
+          msg: "Tipo de transação inválido.",
+        },
+      },
     },
     amount: {
       type: DataTypes.FLOAT,
@@ -35,15 +58,13 @@ Transaction.init(
       type: DataTypes.FLOAT,
       allowNull: true,
     },
-    stockId: {
+    userId: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
       references: {
-        model: Stock,
+        model: User,
         key: "id",
       },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE",
     },
     walletId: {
       type: DataTypes.STRING,
@@ -52,29 +73,31 @@ Transaction.init(
         model: Wallet,
         key: "id",
       },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE",
     },
-    userId: {
+    stockId: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       references: {
-        model: User,
+        model: Stock,
         key: "id",
       },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE",
-    },
-    transactionDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
     },
   },
   {
     sequelize,
     tableName: "transactions",
     timestamps: true,
+    indexes: [
+      {
+        fields: ["userId"],
+      },
+      {
+        fields: ["walletId"],
+      },
+      {
+        fields: ["stockId"],
+      },
+    ],
   }
 );
 
@@ -86,7 +109,3 @@ Transaction.belongsTo(Wallet, { foreignKey: "walletId" });
 
 Stock.hasMany(Transaction, { foreignKey: "stockId" });
 Transaction.belongsTo(Stock, { foreignKey: "stockId" });
-
-(async () => {
-  await Transaction.sync();
-})();

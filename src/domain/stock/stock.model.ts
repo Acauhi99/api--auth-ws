@@ -6,6 +6,7 @@ export class Stock extends Model {
   public id!: string;
   public type!: string;
   public ticker!: string;
+  public currentPrice!: number;
 }
 
 Stock.init(
@@ -24,6 +25,10 @@ Stock.init(
       allowNull: false,
       unique: true,
     },
+    currentPrice: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
   },
   {
     sequelize,
@@ -31,7 +36,3 @@ Stock.init(
     timestamps: true,
   }
 );
-
-(async () => {
-  await Stock.sync();
-})();

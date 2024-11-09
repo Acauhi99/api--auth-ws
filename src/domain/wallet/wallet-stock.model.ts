@@ -1,7 +1,7 @@
 import { DataTypes, Model } from "sequelize";
 import { sequelize } from "../../sequelize";
 import { Wallet } from "./wallet.model";
-import { Stock } from "../stock/stock.model";
+import { Stock } from "../stock";
 import kuid from "kuid";
 
 export class WalletStock extends Model {
@@ -10,6 +10,7 @@ export class WalletStock extends Model {
   public stockId!: string;
   public quantity!: number;
   public averagePurchasePrice!: number;
+  public monthlyProfitability!: number | null;
 }
 
 WalletStock.init(
@@ -25,8 +26,6 @@ WalletStock.init(
         model: Wallet,
         key: "id",
       },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE",
     },
     stockId: {
       type: DataTypes.STRING,
@@ -34,8 +33,6 @@ WalletStock.init(
         model: Stock,
         key: "id",
       },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE",
     },
     quantity: {
       type: DataTypes.FLOAT,
@@ -45,11 +42,23 @@ WalletStock.init(
       type: DataTypes.FLOAT,
       allowNull: false,
     },
+    monthlyProfitability: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     tableName: "wallet_stocks",
     timestamps: true,
+    indexes: [
+      {
+        fields: ["walletId"],
+      },
+      {
+        fields: ["stockId"],
+      },
+    ],
   }
 );
 
@@ -58,7 +67,3 @@ WalletStock.belongsTo(Wallet, { foreignKey: "walletId" });
 
 Stock.hasMany(WalletStock, { foreignKey: "stockId" });
 WalletStock.belongsTo(Stock, { foreignKey: "stockId" });
-
-(async () => {
-  await WalletStock.sync();
-})();

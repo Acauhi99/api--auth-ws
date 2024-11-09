@@ -1,6 +1,6 @@
 import { DataTypes, Model } from "sequelize";
 import { sequelize } from "../../sequelize";
-import { User } from "../user/user.model";
+import { User } from "../user";
 import kuid from "kuid";
 
 export class Wallet extends Model {
@@ -28,20 +28,19 @@ Wallet.init(
         model: User,
         key: "id",
       },
-      onUpdate: "CASCADE",
-      onDelete: "CASCADE",
     },
   },
   {
     sequelize,
     tableName: "wallets",
     timestamps: true,
+    indexes: [
+      {
+        fields: ["userId"],
+      },
+    ],
   }
 );
 
-User.hasOne(Wallet, { foreignKey: "userId" });
+User.hasMany(Wallet, { foreignKey: "userId" });
 Wallet.belongsTo(User, { foreignKey: "userId" });
-
-(async () => {
-  await Wallet.sync();
-})();
