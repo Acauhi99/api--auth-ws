@@ -9,6 +9,10 @@ module.exports = {
         primaryKey: true,
         allowNull: false,
       },
+      githubId: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
       firstName: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -17,14 +21,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      githubId: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-      avatarUrl: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
       email: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -32,10 +28,6 @@ module.exports = {
       },
       password: {
         type: Sequelize.STRING,
-        allowNull: true,
-      },
-      birthDate: {
-        type: Sequelize.DATE,
         allowNull: true,
       },
       createdAt: {
