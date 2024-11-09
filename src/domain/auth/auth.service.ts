@@ -114,7 +114,6 @@ export class AuthService {
         lastName: githubUser.name?.split(" ").slice(1).join(" ") || "",
         email: githubUser.email || "",
         githubId: githubUser.id.toString(),
-        avatarUrl: githubUser.avatar_url,
       };
 
       await this.authRepository.save(newUserData);
