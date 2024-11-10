@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { AuthController } from "../controller";
-import { asyncHandler } from "../middlewares/async-handler.middleware";
+import { asyncHandler } from "../middlewares";
 
-const authRoutes = Router();
+const authRouter = Router();
 const authController = new AuthController();
 
-authRoutes.post("/register", asyncHandler(authController.register));
-authRoutes.post("/login", asyncHandler(authController.login));
+authRouter.post("/register", asyncHandler(authController.register));
+authRouter.post("/login", asyncHandler(authController.login));
 
-authRoutes.get("/github", asyncHandler(authController.githubAuth));
-authRoutes.get("/github/callback", asyncHandler(authController.githubCallback));
+authRouter.get("/github", asyncHandler(authController.githubAuth));
+authRouter.get("/github/callback", asyncHandler(authController.githubCallback));
 
-export { authRoutes };
+export { authRouter };

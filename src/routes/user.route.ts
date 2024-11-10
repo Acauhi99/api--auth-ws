@@ -2,15 +2,15 @@ import { Router } from "express";
 import { UserController } from "../controller";
 import { asyncHandler, authenticateHandler } from "../middlewares";
 
-const userRoutes = Router();
+const userRouter = Router();
 const userController = new UserController();
 
-userRoutes.use(authenticateHandler);
+userRouter.use(authenticateHandler);
 
-userRoutes.get("/", asyncHandler(userController.getAllUsers));
-userRoutes.get("/:id", asyncHandler(userController.getUserById));
-userRoutes.patch("/:id", asyncHandler(userController.patchUser));
-userRoutes.put("/:id", asyncHandler(userController.updateUser));
-userRoutes.delete("/:id", asyncHandler(userController.deleteUser));
+userRouter.get("/", asyncHandler(userController.getAllUsers));
+userRouter.get("/:id", asyncHandler(userController.getUserById));
+userRouter.patch("/:id", asyncHandler(userController.patchUser));
+userRouter.put("/:id", asyncHandler(userController.updateUser));
+userRouter.delete("/:id", asyncHandler(userController.deleteUser));
 
-export { userRoutes };
+export { userRouter };
