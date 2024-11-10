@@ -1,7 +1,14 @@
 import cors from "cors";
 import express, { Request, Response } from "express";
 import { PORT } from "./config";
-import { authRoutes, userRoutes } from "./routes";
+import {
+  authRouter,
+  dividendRouter,
+  stockRouter,
+  transactionRouter,
+  userRouter,
+  walletRouter,
+} from "./routes";
 
 const app = express();
 
@@ -20,8 +27,12 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Registro das rotas
-app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
+app.use("/api/dividend", dividendRouter);
+app.use("/api/stock", stockRouter);
+app.use("/api/transaction", transactionRouter);
+app.use("/api/wallet", walletRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
