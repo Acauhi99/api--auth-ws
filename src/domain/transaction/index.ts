@@ -1,1 +1,2 @@
-export { Transaction } from "./transaction.model";
+export { Transaction, TransactionType } from "./transaction.model";
+export { TransactionService } from "./transaction.service";
