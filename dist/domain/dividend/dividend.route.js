@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.dividendRouter = void 0;
+const express_1 = require("express");
+const dividend_controller_1 = require("./dividend.controller");
+const middlewares_1 = require("../../middlewares");
+const dividendRouter = (0, express_1.Router)();
+exports.dividendRouter = dividendRouter;
+const dividendController = new dividend_controller_1.DividendController();
+dividendRouter.use(middlewares_1.authenticateHandler);
+dividendRouter.get("/", (0, middlewares_1.asyncHandler)(dividendController.getDividends));
+dividendRouter.post("/", (0, middlewares_1.asyncHandler)(dividendController.createDividend));
