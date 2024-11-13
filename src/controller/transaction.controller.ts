@@ -44,6 +44,7 @@ export class TransactionController {
       }
 
       const transaction = await this.transactionService.createTransaction(
+        userId,
         transactionData
       );
       return res.status(201).json(transaction);
@@ -72,6 +73,7 @@ export class TransactionController {
       }
 
       const transaction = await this.transactionService.createTransaction(
+        userId,
         transactionData
       );
       return res.status(201).json(transaction);
@@ -102,6 +104,7 @@ export class TransactionController {
       }
 
       const transaction = await this.transactionService.createTransaction(
+        userId,
         transactionData
       );
       return res.status(201).json(transaction);
@@ -126,6 +129,7 @@ export class TransactionController {
       }
 
       const transaction = await this.transactionService.createTransaction(
+        userId,
         transactionData
       );
       return res.status(201).json(transaction);
