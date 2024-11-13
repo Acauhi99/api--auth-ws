@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import { StockService } from "../domain/stock";
 import {
+  AvailableStockDTO,
   CreateStockDTO,
   StockFilterDTO,
   StockQuoteDTO,
+  StockQuotesDTO,
 } from "../domain/stock/dtos";
 
 export class StockController {
@@ -71,6 +73,49 @@ export class StockController {
       }
 
       return res.status(200).json(quote);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
+  };
+
+  getAvailableStocks = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const search: string = "BR";
+      const availableStocks: AvailableStockDTO =
+        await this.stockService.fetchAvailableStocks(search);
+
+      return res.status(200).json(availableStocks);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
+  };
+
+  getQuotes = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const { tickers } = req.params;
+      const query = req.query;
+
+      const tickersArray = tickers.split(",").map((ticker) => ticker.trim());
+
+      const options = {
+        range: query.range as string,
+        interval: query.interval as string,
+        fundamental: query.fundamental === "true",
+        dividends: query.dividends === "true",
+        modules: query.modules
+          ? (query.modules as string).split(",")
+          : undefined,
+      };
+
+      const quotes: StockQuotesDTO = await this.stockService.getQuotes(
+        tickersArray,
+        options
+      );
+
+      return res.status(200).json(quotes);
     } catch (error) {
       return res.status(500).json({ message: (error as Error).message });
     }
