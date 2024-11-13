@@ -1,11 +1,29 @@
-import { DataTypes, Model } from "sequelize";
+import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../../sequelize";
 import { User } from "../user";
 import { Wallet } from "../wallet";
 import { Stock } from "../stock";
 import kuid from "kuid";
 
-export class Dividend extends Model {
+export interface DividendAttributes {
+  id: string;
+  stockId: string;
+  walletId: string;
+  userId: string;
+  amount: number;
+  paymentDate: Date;
+  declaredDate: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface DividendCreationAttributes
+  extends Optional<DividendAttributes, "id" | "createdAt" | "updatedAt"> {}
+
+export class Dividend
+  extends Model<DividendAttributes, DividendCreationAttributes>
+  implements DividendAttributes
+{
   public id!: string;
   public stockId!: string;
   public walletId!: string;
@@ -13,6 +31,8 @@ export class Dividend extends Model {
   public amount!: number;
   public paymentDate!: Date;
   public declaredDate!: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 Dividend.init(
