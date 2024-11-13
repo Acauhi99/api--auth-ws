@@ -1,4 +1,4 @@
-import { DataTypes, Model } from "sequelize";
+import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../../sequelize";
 import { User } from "../user";
 import { Wallet } from "../wallet";
@@ -13,16 +13,41 @@ export enum TransactionType {
   DIVIDEND = "DIVIDEND",
 }
 
-export class Transaction extends Model {
+export interface TransactionAttributes {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  quantity?: number;
+  userId: string;
+  walletId: string;
+  stockId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface TransactionWithStock extends Transaction {
+  stock?: Stock;
+}
+
+export interface TransactionCreationAttributes
+  extends Optional<
+    TransactionAttributes,
+    "id" | "quantity" | "stockId" | "createdAt" | "updatedAt"
+  > {}
+
+export class Transaction
+  extends Model<TransactionAttributes, TransactionCreationAttributes>
+  implements TransactionAttributes
+{
   public id!: string;
-  public type!: String;
+  public type!: TransactionType;
   public amount!: number;
-  public quantity!: number;
+  public quantity?: number;
   public userId!: string;
   public walletId!: string;
-  public stockId!: string;
-  public createdAt!: Date;
-  public updatedAt!: Date;
+  public stockId?: string;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 Transaction.init(

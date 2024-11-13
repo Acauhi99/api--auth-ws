@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { WalletService } from "../domain/wallet";
+import { WalletService } from "./wallet.service";
 import {
   DepositDTO,
   WithdrawDTO,
   ProfitabilityDTO,
   WalletSummaryDTO,
-} from "../domain/wallet/dtos";
+} from "./dtos";
 
 export class WalletController {
   private walletService: WalletService;

@@ -1,6 +1,6 @@
 import { Op, fn, col } from "sequelize";
 import { Dividend } from "./dividend.model";
-import { Stock } from "../stock/stock.model";
+import { Stock } from "../stock";
 import { CreateDividendDTO, DividendSummaryDTO } from "./dtos";
 
 export interface MonthlyDistributionResult {

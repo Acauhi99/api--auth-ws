@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { DividendService } from "../domain/dividend";
-import { CreateDividendDTO, DividendSummaryDTO } from "../domain/dividend/dtos";
+import { DividendService } from "./dividend.service";
+import { CreateDividendDTO, DividendSummaryDTO } from "./dtos";
 
 export class DividendController {
   private dividendService: DividendService;

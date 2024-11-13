@@ -8,7 +8,7 @@ import {
   transactionRouter,
   userRouter,
   walletRouter,
-} from "./routes";
+} from "./domain";
 
 const app = express();
 

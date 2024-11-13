@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { GITHUB_CLIENT_ID, GITHUB_REDIRECT_URI } from "../config";
-import { AuthService } from "../domain/auth";
+import { GITHUB_CLIENT_ID, GITHUB_REDIRECT_URI } from "../../config";
+import { AuthService } from "./auth.service";
 
 export class AuthController {
   private authService: AuthService;

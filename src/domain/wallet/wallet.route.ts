@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { WalletController } from "../controller";
-import { asyncHandler, authenticateHandler } from "../middlewares";
+import { WalletController } from "./wallet.controller";
+import { asyncHandler, authenticateHandler } from "../../middlewares";
 
 const walletRouter = Router();
 const walletController = new WalletController();

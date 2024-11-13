@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { TransactionController } from "../controller";
-import { asyncHandler, authenticateHandler } from "../middlewares";
+import { TransactionController } from "./transaction.controller";
+import { asyncHandler, authenticateHandler } from "../../middlewares";
 
 const transactionRouter = Router();
 const transactionController = new TransactionController();

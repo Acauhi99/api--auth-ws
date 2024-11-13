@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import { TransactionService, TransactionType } from "../domain/transaction";
+import { TransactionService } from "./transaction.service";
+import { TransactionType } from "./transaction.model";
 import {
   CreateTransactionDTO,
   TransactionFilterDTO,
   TransactionHistoryDTO,
-} from "../domain/transaction/dtos";
+} from "./dtos";
 
 export class TransactionController {
   private transactionService: TransactionService;

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { StockController } from "../controller";
-import { asyncHandler } from "../middlewares";
+import { StockController } from "./stock.controller";
+import { asyncHandler } from "../../middlewares";
 
 const stockRouter = Router();
 const stockController = new StockController();

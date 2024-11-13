@@ -1,8 +1,8 @@
 import { DividendRepository } from "./dividend.repository";
-import { WalletRepository } from "../wallet/wallet.repository";
-import { TransactionRepository } from "../transaction/transaction.repository";
+import { WalletRepository } from "../wallet";
+import { TransactionRepository } from "../transaction/";
 import { CreateDividendDTO, DividendSummaryDTO } from "./dtos";
-import { TransactionType } from "../transaction/transaction.model";
+import { TransactionType } from "../transaction";
 import { Dividend } from "./dividend.model";
 
 export class DividendService {

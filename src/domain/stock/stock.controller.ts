@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { StockService } from "../domain/stock";
+import { StockService } from "./stock.service";
 import {
   AvailableStockDTO,
   CreateStockDTO,
   StockFilterDTO,
   StockQuoteDTO,
   StockQuotesDTO,
-} from "../domain/stock/dtos";
+} from "./dtos";
 
 export class StockController {
   private stockService: StockService;

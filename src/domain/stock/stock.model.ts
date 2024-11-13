@@ -1,12 +1,29 @@
-import { DataTypes, Model } from "sequelize";
+import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../../sequelize";
 import kuid from "kuid";
 
-export class Stock extends Model {
+export interface StockAttributes {
+  id: string;
+  type: string;
+  ticker: string;
+  currentPrice: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface StockCreationAttributes
+  extends Optional<StockAttributes, "id" | "currentPrice"> {}
+
+export class Stock
+  extends Model<StockAttributes, StockCreationAttributes>
+  implements StockAttributes
+{
   public id!: string;
   public type!: string;
   public ticker!: string;
   public currentPrice!: number;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 Stock.init(
@@ -28,6 +45,17 @@ Stock.init(
     currentPrice: {
       type: DataTypes.FLOAT,
       allowNull: true,
+      defaultValue: 0,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

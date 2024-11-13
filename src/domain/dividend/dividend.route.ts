@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { DividendController } from "../controller";
-import { asyncHandler, authenticateHandler } from "../middlewares";
+import { DividendController } from "./dividend.controller";
+import { asyncHandler, authenticateHandler } from "../../middlewares";
 
 const dividendRouter = Router();
 const dividendController = new DividendController();
