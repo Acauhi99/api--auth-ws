@@ -11,6 +11,6 @@ stockRouter.get(
   "/market/available",
   asyncHandler(stockController.getAvailableStocks)
 );
-stockRouter.get("/market/:ticker", asyncHandler(stockController.getStockQuote));
+stockRouter.get("/market/:ticker", asyncHandler(stockController.getStockInfo));
 
 export { stockRouter };

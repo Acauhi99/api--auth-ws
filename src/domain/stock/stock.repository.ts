@@ -25,6 +25,13 @@ export class StockRepository {
     );
   }
 
+  async bulkCreate(stocks: StockCreationAttributes[]): Promise<Stock[]> {
+    return Stock.bulkCreate(stocks, {
+      ignoreDuplicates: true,
+      returning: true,
+    });
+  }
+
   async createOrUpdateStock(
     stock: StockCreationAttributes,
     transaction?: SequelizeTransaction
