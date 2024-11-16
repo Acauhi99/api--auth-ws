@@ -109,11 +109,12 @@ export class AuthService {
     );
 
     if (!user) {
-      const newUserData: GitHubUserFieldsDTO = {
+      const newUserData: UserCreateFieldsDTO = {
         firstName: githubUser.name?.split(" ")[0] || githubUser.login,
         lastName: githubUser.name?.split(" ").slice(1).join(" ") || "",
-        email: githubUser.email || "",
+        email: githubUser.email,
         githubId: githubUser.id.toString(),
+        password: await bcrypt.hash("defaultPassword", 10),
       };
 
       await this.authRepository.save(newUserData);
