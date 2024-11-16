@@ -1,2 +1,2 @@
 export { Dividend } from "./dividend.model";
-export { DividendService } from "./dividend.service";
+export { DividendRepository } from "./dividend.repository";

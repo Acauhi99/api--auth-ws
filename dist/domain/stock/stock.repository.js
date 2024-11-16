@@ -13,63 +13,48 @@ exports.StockRepository = void 0;
 const sequelize_1 = require("sequelize");
 const stock_model_1 = require("./stock.model");
 class StockRepository {
-    create(data) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const stockData = Object.assign(Object.assign({}, data), { currentPrice: data.currentPrice || 0 });
-            return stock_model_1.Stock.create(stockData);
-        });
-    }
-    findById(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const stock = yield stock_model_1.Stock.findByPk(id);
-            if (!stock)
-                throw new Error(`Ação com ID ${id} não encontrada no sistema`);
-            return stock;
-        });
-    }
     findByTicker(ticker) {
         return __awaiter(this, void 0, void 0, function* () {
             return stock_model_1.Stock.findOne({ where: { ticker } });
         });
     }
-    findAll(filters) {
+    findByTickers(tickers) {
         return __awaiter(this, void 0, void 0, function* () {
-            const where = {};
-            if (filters.type) {
-                where.type = filters.type;
-            }
-            if (filters.minPrice || filters.maxPrice) {
-                where.currentPrice = {};
-                if (filters.minPrice)
-                    where.currentPrice[sequelize_1.Op.gte] = filters.minPrice;
-                if (filters.maxPrice)
-                    where.currentPrice[sequelize_1.Op.lte] = filters.maxPrice;
-            }
-            if (filters.search) {
-                where.ticker = { [sequelize_1.Op.iLike]: `%${filters.search}%` };
-            }
-            return stock_model_1.Stock.findAll({ where });
+            return stock_model_1.Stock.findAll({
+                where: { ticker: { [sequelize_1.Op.in]: tickers } },
+            });
         });
     }
-    update(id, data) {
+    updateByTicker(ticker, price) {
         return __awaiter(this, void 0, void 0, function* () {
-            const [updated] = yield stock_model_1.Stock.update(data, { where: { id } });
-            if (!updated)
-                throw new Error(`Não foi possível atualizar a ação com ID ${id}. Ação não encontrada.`);
+            yield stock_model_1.Stock.update({ currentPrice: price }, { where: { ticker } });
         });
     }
     bulkUpdatePrices(updates) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield Promise.all(updates.map(({ ticker, price }) => stock_model_1.Stock.update({ currentPrice: price }, { where: { ticker } })));
+            yield Promise.all(updates.map(({ ticker, price }) => this.updateByTicker(ticker, price)));
         });
     }
-    updateByTicker(ticker, data) {
+    createOrUpdateStock(stock, transaction) {
         return __awaiter(this, void 0, void 0, function* () {
-            const [updatedRows] = yield stock_model_1.Stock.update(data, {
-                where: { ticker },
+            const [updatedStock, created] = yield stock_model_1.Stock.findOrCreate({
+                where: { ticker: stock.ticker },
+                defaults: stock,
+                transaction,
             });
-            if (updatedRows === 0) {
-                throw new Error(`Não foi possível atualizar a ação com ticker ${ticker}. Ação não encontrada.`);
+            if (!created) {
+                yield updatedStock.update(stock, { transaction });
+            }
+            return updatedStock;
+        });
+    }
+    findById(stockId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield stock_model_1.Stock.findByPk(stockId);
+            }
+            catch (error) {
+                throw new Error(`Erro ao buscar a ação com ID ${stockId}`);
             }
         });
     }

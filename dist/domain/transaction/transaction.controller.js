@@ -28,7 +28,7 @@ class TransactionController {
         this.buyStock = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
-                const transactionData = Object.assign(Object.assign({}, req.body), { type: transaction_model_1.TransactionType.BUY, walletId: req.body.walletId });
+                const transactionData = Object.assign(Object.assign({}, req.body), { type: transaction_model_1.TransactionType.BUY, portfolioId: req.body.portfolioId });
                 if (!this.isValidStockTransaction(transactionData)) {
                     return res.status(400).json({
                         message: "Dados incompletos. stockId, quantity e amount são obrigatórios",
@@ -47,7 +47,7 @@ class TransactionController {
         this.sellStock = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
-                const transactionData = Object.assign(Object.assign({}, req.body), { type: transaction_model_1.TransactionType.SELL, walletId: req.body.walletId });
+                const transactionData = Object.assign(Object.assign({}, req.body), { type: transaction_model_1.TransactionType.SELL, portfolioId: req.body.portfolioId });
                 if (!this.isValidStockTransaction(transactionData)) {
                     return res.status(400).json({
                         message: "Dados incompletos. stockId, quantity e amount são obrigatórios",
@@ -70,7 +70,7 @@ class TransactionController {
                 const transactionData = {
                     type: transaction_model_1.TransactionType.DEPOSIT,
                     amount: req.body.amount,
-                    walletId: req.body.walletId,
+                    portfolioId: req.body.portfolioId,
                 };
                 if (!this.isValidMoneyTransaction(transactionData)) {
                     return res.status(400).json({
@@ -90,7 +90,7 @@ class TransactionController {
                 const transactionData = {
                     type: transaction_model_1.TransactionType.WITHDRAWAL,
                     amount: req.body.amount,
-                    walletId: req.body.walletId,
+                    portfolioId: req.body.portfolioId,
                 };
                 if (!this.isValidMoneyTransaction(transactionData)) {
                     return res.status(400).json({
@@ -131,10 +131,10 @@ class TransactionController {
             data.amount &&
             data.amount > 0 &&
             data.quantity > 0 &&
-            data.walletId);
+            data.portfolioId);
     }
     isValidMoneyTransaction(data) {
-        return !!(data.amount && data.amount > 0 && data.walletId);
+        return !!(data.amount && data.amount > 0 && data.portfolioId);
     }
 }
 exports.TransactionController = TransactionController;

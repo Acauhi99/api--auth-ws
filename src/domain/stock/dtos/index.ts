@@ -1,6 +1,4 @@
-export { CreateStockDTO } from "./create-stock.dto";
-export { StockFilterDTO } from "./stock-filter.dto";
-export { StockQuoteDTO } from "./stock-quote.dto";
-export { StockTransactionDTO } from "./stock-transaction.dto";
-export { AvailableStockDTO } from "./available-stock.dto";
-export { StockQuotesDTO } from "./stock-quotes.dto";
+export * from "./stock-quotes.dto";
+export * from "./stock-quote-response.dto";
+export * from "./stock-quote-result.dto";
+export * from "./stock-quote.dto";

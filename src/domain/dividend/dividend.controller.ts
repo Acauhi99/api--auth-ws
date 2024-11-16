@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { DividendService } from "./dividend.service";
-import { CreateDividendDTO, DividendSummaryDTO } from "./dtos";
+import { CreateDividendDTO } from "./dtos";
 
 export class DividendController {
   private dividendService: DividendService;
@@ -12,10 +12,8 @@ export class DividendController {
   getDividends = async (req: Request, res: Response): Promise<Response> => {
     try {
       const userId = req.user!.id;
-      const dividendSummary: DividendSummaryDTO =
-        await this.dividendService.getDividendsByUserId(userId);
-
-      return res.status(200).json(dividendSummary);
+      const dividends = await this.dividendService.getDividendsByUserId(userId);
+      return res.status(200).json(dividends);
     } catch (error) {
       return res.status(500).json({ message: (error as Error).message });
     }
@@ -32,15 +30,69 @@ export class DividendController {
       if (!this.isValidCreateDividendDTO(dividendData)) {
         return res.status(400).json({
           message:
-            "Dados incompletos. stockId, walletId, amount, paymentDate e declaredDate são obrigatórios",
+            "Dados incompletos. stockId, portfolioId, amount, paymentDate e declaredDate são obrigatórios",
         });
       }
 
       const newDividend = await this.dividendService.createDividend(
         dividendData
       );
-
       return res.status(201).json(newDividend);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
+  };
+
+  getDividendSummary = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const userId = req.user!.id;
+      const summary = await this.dividendService.getDividendSummary(userId);
+      return res.status(200).json(summary);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
+  };
+
+  getDividendCalendar = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const userId = req.user!.id;
+      const { month, year } = req.query;
+
+      const calendar = await this.dividendService.getDividendCalendar(
+        userId,
+        Number(month) || new Date().getMonth() + 1,
+        Number(year) || new Date().getFullYear()
+      );
+
+      return res.status(200).json(calendar);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
+  };
+
+  getStockDividendHistory = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const userId = req.user!.id;
+      const { stockId } = req.params;
+
+      if (!stockId) {
+        return res.status(400).json({ message: "Stock ID é obrigatório" });
+      }
+
+      const history = await this.dividendService.getStockDividendHistory(
+        userId,
+        stockId
+      );
+      return res.status(200).json(history);
     } catch (error) {
       return res.status(500).json({ message: (error as Error).message });
     }
@@ -51,7 +103,7 @@ export class DividendController {
   ): data is CreateDividendDTO {
     return !!(
       data.stockId &&
-      data.walletId &&
+      data.portfolioId &&
       data.amount &&
       data.paymentDate &&
       data.declaredDate

@@ -14,17 +14,35 @@ const sequelize_1 = require("sequelize");
 const transaction_model_1 = require("./transaction.model");
 const stock_1 = require("../stock");
 class TransactionRepository {
-    create(data) {
+    create(data, transaction) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                return yield transaction_model_1.Transaction.create(data);
+                return yield transaction_model_1.Transaction.create(data, { transaction });
             }
             catch (error) {
-                throw new Error(`Erro ao criar transação: dados inválidos ou incompletos`);
+                throw new Error("Erro ao criar transação: dados inválidos ou incompletos");
             }
         });
     }
-    findByUserId(userId, filter) {
+    findById(transactionId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield transaction_model_1.Transaction.findOne({
+                    where: { id: transactionId },
+                    include: [
+                        {
+                            model: stock_1.Stock,
+                            attributes: ["ticker"],
+                        },
+                    ],
+                });
+            }
+            catch (error) {
+                throw new Error(`Erro ao buscar a transação com ID ${transactionId}`);
+            }
+        });
+    }
+    findByUserId(userId, filter, transaction) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             try {
@@ -49,6 +67,7 @@ class TransactionRepository {
                         },
                     ],
                     order: [["createdAt", "DESC"]],
+                    transaction,
                 });
                 return transactions;
             }
@@ -57,30 +76,32 @@ class TransactionRepository {
             }
         });
     }
-    findWalletTransactions(walletId) {
+    findPortfolioTransactions(portfolioId, transaction) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 return yield transaction_model_1.Transaction.findAll({
-                    where: { walletId },
+                    where: { portfolioId },
                     order: [["createdAt", "ASC"]],
+                    transaction,
                 });
             }
             catch (error) {
-                throw new Error(`Erro ao buscar transações da carteira ${walletId}`);
+                throw new Error(`Erro ao buscar transações da carteira ${portfolioId}`);
             }
         });
     }
-    getStockTransactionBalance(walletId, stockId) {
+    getStockTransactionBalance(portfolioId, stockId, transaction) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const transactions = yield transaction_model_1.Transaction.findAll({
                     where: {
-                        walletId,
+                        portfolioId,
                         stockId,
                         type: {
                             [sequelize_1.Op.in]: [transaction_model_1.TransactionType.BUY, transaction_model_1.TransactionType.SELL],
                         },
                     },
+                    transaction,
                 });
                 return transactions.reduce((balance, tx) => {
                     return (balance +
@@ -88,15 +109,16 @@ class TransactionRepository {
                 }, 0);
             }
             catch (error) {
-                throw new Error(`Erro ao calcular saldo de ações na carteira ${walletId} para o ativo ${stockId}`);
+                throw new Error(`Erro ao calcular saldo de ações na carteira ${portfolioId} para o ativo ${stockId}`);
             }
         });
     }
-    getWalletBalance(walletId) {
+    getPortfolioBalance(portfolioId, transaction) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const transactions = yield transaction_model_1.Transaction.findAll({
-                    where: { walletId },
+                    where: { portfolioId },
+                    transaction,
                 });
                 return transactions.reduce((balance, tx) => {
                     switch (tx.type) {
@@ -113,7 +135,7 @@ class TransactionRepository {
                 }, 0);
             }
             catch (error) {
-                throw new Error(`Erro ao calcular saldo total da carteira ${walletId}`);
+                throw new Error(`Erro ao calcular saldo total da carteira ${portfolioId}`);
             }
         });
     }

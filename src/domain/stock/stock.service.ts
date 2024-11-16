@@ -1,32 +1,13 @@
 import axios from "axios";
+import { BRAPI_TOKEN, BRAPI_URL } from "../../config";
+import { StockQuoteDTO, StockQuoteResponse } from "./dtos";
 import { StockRepository } from "./stock.repository";
 import {
-  CreateStockDTO,
-  StockFilterDTO,
-  StockQuoteDTO,
-  AvailableStockDTO,
-  StockQuotesDTO,
-} from "./dtos";
-import { BRAPI_TOKEN, BRAPI_URL } from "../../config";
-import { Stock } from "./stock.model";
-
-interface QuoteResponse {
-  results: Array<{
-    symbol: string;
-    regularMarketPrice: number;
-  }>;
-}
-
-interface StockQuoteResponse {
-  results: Array<{
-    symbol: string;
-    currency: string;
-    regularMarketPrice: number;
-    regularMarketChange: number;
-    regularMarketChangePercent: number;
-    regularMarketTime: number;
-  }>;
-}
+  StockAttributes,
+  StockCreationAttributes,
+  StockType,
+} from "./stock.model";
+import { Transaction as SequelizeTransaction } from "sequelize";
 
 export class StockService {
   private stockRepository: StockRepository;
@@ -35,141 +16,101 @@ export class StockService {
     this.stockRepository = new StockRepository();
   }
 
-  async createStock(data: CreateStockDTO): Promise<Stock> {
-    this.validateStock(data);
-    return this.stockRepository.create(data);
-  }
-
-  async getAllStocks(filters: StockFilterDTO): Promise<Stock[]> {
-    return this.stockRepository.findAll(filters);
-  }
-
-  async getStockById(id: string): Promise<Stock> {
-    return this.stockRepository.findById(id);
-  }
-
-  async getStockQuote(ticker: string): Promise<StockQuoteDTO> {
+  async getCurrentPrice(ticker: string): Promise<number | null> {
     try {
       const response = await axios.get<StockQuoteResponse>(
-        `${BRAPI_URL}/quote/${ticker}`,
-        {
-          params: { token: BRAPI_TOKEN },
-        }
+        `${BRAPI_URL}/api/quote/${ticker}`,
+        { params: { token: BRAPI_TOKEN } }
       );
 
-      const quoteData = response.data.results[0];
-
-      const quote: StockQuoteDTO = {
-        symbol: quoteData.symbol,
-        currency: quoteData.currency,
-        currentPrice: quoteData.regularMarketPrice,
-        change: quoteData.regularMarketChange,
-        changePercent: quoteData.regularMarketChangePercent,
-        updatedAt: new Date(quoteData.regularMarketTime * 1000),
-      };
-
-      await this.stockRepository.updateByTicker(ticker, {
-        currentPrice: quote.currentPrice,
-      });
-
-      return quote;
-    } catch (error) {
-      throw new Error(
-        `Erro ao obter cotação da API externa: ${(error as Error).message}`
-      );
-    }
-  }
-
-  async getQuotes(
-    tickers: string[],
-    options: {
-      range?: string;
-      interval?: string;
-      fundamental?: boolean;
-      dividends?: boolean;
-      modules?: string[];
-    }
-  ): Promise<StockQuotesDTO> {
-    try {
-      const params: any = {
-        token: BRAPI_TOKEN,
-      };
-
-      if (options.range) params.range = options.range;
-      if (options.interval) params.interval = options.interval;
-      if (options.fundamental !== undefined)
-        params.fundamental = options.fundamental;
-      if (options.dividends !== undefined) params.dividends = options.dividends;
-      if (options.modules) params.modules = options.modules.join(",");
-
-      const response = await axios.get(
-        `${BRAPI_URL}/quote/${tickers.join(",")}`,
-        {
-          params,
-        }
-      );
-
-      return response.data as StockQuotesDTO;
-    } catch (error) {
-      throw new Error(
-        `Erro ao obter cotações múltiplas: ${(error as Error).message}`
-      );
-    }
-  }
-
-  async fetchAvailableStocks(search: string): Promise<AvailableStockDTO> {
-    try {
-      const params: any = { token: BRAPI_TOKEN };
-
-      if (search) {
-        params.search = search;
+      if (!response.data?.results?.[0]) {
+        throw new Error(`No data found for ticker: ${ticker}`);
       }
 
-      const response = await axios.get(`${BRAPI_URL}/api/available`, {
-        params,
-      });
-
-      return response.data as AvailableStockDTO;
+      const currentPrice = response.data.results[0].regularMarketPrice;
+      await this.stockRepository.updateByTicker(ticker, currentPrice);
+      return currentPrice;
     } catch (error) {
-      throw new Error(
-        `Erro ao buscar ações disponíveis: ${(error as Error).message}`
+      console.error(
+        `Error fetching stock price for ${ticker}:`,
+        (error as Error).message
       );
+      return null;
     }
   }
 
-  async syncStockPrices(): Promise<void> {
+  async createOrUpdateStock(
+    stock: Partial<StockAttributes>,
+    transaction?: SequelizeTransaction
+  ): Promise<StockAttributes> {
+    if (!stock.ticker) {
+      throw new Error("Ticker é obrigatório para criar ou atualizar uma ação.");
+    }
+
+    const stockData: StockCreationAttributes = {
+      ticker: stock.ticker,
+      type: stock.type || StockType.STOCK,
+      currentPrice: stock.currentPrice || 0,
+    };
+
+    const updatedStock = await this.stockRepository.createOrUpdateStock(
+      stockData,
+      transaction
+    );
+    return updatedStock;
+  }
+
+  async getStockQuote(ticker: string): Promise<StockQuoteDTO | null> {
     try {
-      const stocks = await this.stockRepository.findAll({});
-      const tickers = stocks.map((stock) => stock.ticker);
+      const stock = await this.stockRepository.findByTicker(ticker);
+      if (!stock) {
+        throw new Error(`Ação com ticker ${ticker} não encontrada.`);
+      }
 
-      const response = await axios.get<QuoteResponse>(
-        `${BRAPI_URL}/api/quote/${tickers.join(",")}`,
-        {
-          params: { token: BRAPI_TOKEN },
-        }
-      );
+      const currentPrice = await this.getCurrentPrice(ticker);
+      if (currentPrice === null) {
+        throw new Error(`Não foi possível obter o preço atual para ${ticker}.`);
+      }
 
-      const updates = response.data.results.map((quote) => ({
-        ticker: quote.symbol,
-        price: quote.regularMarketPrice,
-      }));
+      const shortName = stock.ticker;
 
-      await this.stockRepository.bulkUpdatePrices(updates);
+      const stockQuote: StockQuoteDTO = {
+        ticker: stock.ticker,
+        type: stock.type,
+        currentPrice: Number(currentPrice),
+        shortName,
+        lastUpdated: new Date(),
+      };
+
+      return stockQuote;
     } catch (error) {
-      throw new Error(
-        `Erro ao sincronizar preços das ações: ${(error as Error).message}`
-      );
+      console.error(`Erro em getStockQuote: ${(error as Error).message}`);
+      throw error;
     }
   }
 
-  private validateStock(data: CreateStockDTO): void {
-    if (!data.ticker || !data.type) {
-      throw new Error(
-        "Dados da ação inválidos: ticker e tipo são obrigatórios"
+  async fetchAvailableStocks(search: string): Promise<any> {
+    try {
+      const response = await axios.get<{ stocks: string[] }>(
+        `${BRAPI_URL}/api/available`,
+        { params: { token: BRAPI_TOKEN, search } }
       );
-    }
-    if (data.currentPrice !== undefined && data.currentPrice <= 0) {
-      throw new Error("Preço atual da ação deve ser maior que zero");
+
+      if (!response.data?.stocks) {
+        throw new Error("Invalid response format from BRAPI");
+      }
+
+      return {
+        stocks: response.data.stocks.map((ticker) => ({
+          symbol: ticker,
+          shortName: ticker,
+          type: ticker.endsWith("11") ? "REIT" : "STOCK",
+        })),
+      };
+    } catch (error) {
+      throw new Error(
+        `Error fetching available stocks: ${(error as Error).message}`
+      );
     }
   }
 }

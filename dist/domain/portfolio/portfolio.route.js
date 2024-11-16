@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.portfolioRouter = void 0;
+const express_1 = require("express");
+const portfolio_controller_1 = require("./portfolio.controller");
+const middlewares_1 = require("../../middlewares");
+const portfolioRouter = (0, express_1.Router)();
+exports.portfolioRouter = portfolioRouter;
+const portfolioController = new portfolio_controller_1.PortfolioController();
+portfolioRouter.use(middlewares_1.authenticateHandler);
+portfolioRouter.get("/", (0, middlewares_1.asyncHandler)(portfolioController.getPortfolio.bind(portfolioController)));
+portfolioRouter.post("/stocks", (0, middlewares_1.asyncHandler)(portfolioController.addStockToPortfolio.bind(portfolioController)));
+portfolioRouter.delete("/stocks/:stockId", (0, middlewares_1.asyncHandler)(portfolioController.removeStockFromPortfolio.bind(portfolioController)));
+portfolioRouter.get("/summary", (0, middlewares_1.asyncHandler)(portfolioController.getPortfolioSummary.bind(portfolioController)));
+portfolioRouter.get("/performance", (0, middlewares_1.asyncHandler)(portfolioController.getPortfolioPerformance.bind(portfolioController)));

@@ -1,9 +1,6 @@
-import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../../sequelize";
-import { User } from "../user";
-import { Wallet } from "../wallet";
-import { Stock } from "../stock";
+import { DataTypes, Model, Optional, Sequelize } from "sequelize";
 import kuid from "kuid";
+import { Stock } from "../stock";
 
 export enum TransactionType {
   BUY = "BUY",
@@ -19,7 +16,7 @@ export interface TransactionAttributes {
   amount: number;
   quantity?: number;
   userId: string;
-  walletId: string;
+  portfolioId: string;
   stockId?: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -44,93 +41,80 @@ export class Transaction
   public amount!: number;
   public quantity?: number;
   public userId!: string;
-  public walletId!: string;
+  public portfolioId!: string;
   public stockId?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-}
 
-Transaction.init(
-  {
-    id: {
-      type: DataTypes.STRING,
-      defaultValue: kuid,
-      primaryKey: true,
-    },
-    type: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        isIn: {
-          args: [
-            [
-              TransactionType.BUY,
-              TransactionType.SELL,
-              TransactionType.DEPOSIT,
-              TransactionType.WITHDRAWAL,
-              TransactionType.DIVIDEND,
-            ],
-          ],
-          msg: "Tipo de transação inválido.",
+  static initModel(sequelize: Sequelize): typeof Transaction {
+    Transaction.init(
+      {
+        id: {
+          type: DataTypes.STRING,
+          defaultValue: () => kuid(),
+          primaryKey: true,
+        },
+        type: {
+          type: DataTypes.ENUM(...Object.values(TransactionType)),
+          allowNull: false,
+          validate: {
+            isIn: {
+              args: [Object.values(TransactionType)],
+              msg: "Tipo de transação inválido.",
+            },
+          },
+        },
+        amount: {
+          type: DataTypes.FLOAT,
+          allowNull: false,
+        },
+        quantity: {
+          type: DataTypes.FLOAT,
+          allowNull: true,
+        },
+        userId: {
+          type: DataTypes.STRING,
+          allowNull: false,
+          references: {
+            model: "users",
+            key: "id",
+          },
+        },
+        portfolioId: {
+          type: DataTypes.STRING,
+          allowNull: false,
+          references: {
+            model: "portfolios",
+            key: "id",
+          },
+        },
+        stockId: {
+          type: DataTypes.STRING,
+          allowNull: true,
+          references: {
+            model: "stocks",
+            key: "id",
+          },
         },
       },
-    },
-    amount: {
-      type: DataTypes.FLOAT,
-      allowNull: false,
-    },
-    quantity: {
-      type: DataTypes.FLOAT,
-      allowNull: true,
-    },
-    userId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      references: {
-        model: User,
-        key: "id",
-      },
-    },
-    walletId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      references: {
-        model: Wallet,
-        key: "id",
-      },
-    },
-    stockId: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      references: {
-        model: Stock,
-        key: "id",
-      },
-    },
-  },
-  {
-    sequelize,
-    tableName: "transactions",
-    timestamps: true,
-    indexes: [
       {
-        fields: ["userId"],
-      },
-      {
-        fields: ["walletId"],
-      },
-      {
-        fields: ["stockId"],
-      },
-    ],
+        sequelize,
+        tableName: "transactions",
+        timestamps: true,
+        indexes: [
+          {
+            fields: ["userId"],
+          },
+          {
+            fields: ["portfolioId"],
+          },
+          {
+            fields: ["stockId"],
+          },
+        ],
+      }
+    );
+
+    return Transaction;
   }
-);
-
-User.hasMany(Transaction, { foreignKey: "userId" });
-Transaction.belongsTo(User, { foreignKey: "userId" });
-
-Wallet.hasMany(Transaction, { foreignKey: "walletId" });
-Transaction.belongsTo(Wallet, { foreignKey: "walletId" });
-
-Stock.hasMany(Transaction, { foreignKey: "stockId" });
-Transaction.belongsTo(Stock, { foreignKey: "stockId" });
+}

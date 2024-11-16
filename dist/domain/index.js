@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.walletRouter = exports.transactionRouter = exports.stockRouter = exports.dividendRouter = exports.userRouter = exports.authRouter = void 0;
+exports.portfolioRouter = exports.transactionRouter = exports.stockRouter = exports.dividendRouter = exports.userRouter = exports.authRouter = void 0;
 var auth_route_1 = require("./auth/auth.route");
 Object.defineProperty(exports, "authRouter", { enumerable: true, get: function () { return auth_route_1.authRouter; } });
 var user_route_1 = require("./user/user.route");
@@ -11,5 +11,5 @@ var stock_route_1 = require("./stock/stock.route");
 Object.defineProperty(exports, "stockRouter", { enumerable: true, get: function () { return stock_route_1.stockRouter; } });
 var transaction_route_1 = require("./transaction/transaction.route");
 Object.defineProperty(exports, "transactionRouter", { enumerable: true, get: function () { return transaction_route_1.transactionRouter; } });
-var wallet_route_1 = require("./wallet/wallet.route");
-Object.defineProperty(exports, "walletRouter", { enumerable: true, get: function () { return wallet_route_1.walletRouter; } });
+var portfolio_route_1 = require("./portfolio/portfolio.route");
+Object.defineProperty(exports, "portfolioRouter", { enumerable: true, get: function () { return portfolio_route_1.portfolioRouter; } });

@@ -7,8 +7,10 @@ import {
   stockRouter,
   transactionRouter,
   userRouter,
-  walletRouter,
+  portfolioRouter,
 } from "./domain";
+import "./domain/associations-models";
+import { connectDB, sequelize } from "./sequelize";
 
 const app = express();
 
@@ -32,8 +34,22 @@ app.use("/api/user", userRouter);
 app.use("/api/dividend", dividendRouter);
 app.use("/api/stock", stockRouter);
 app.use("/api/transaction", transactionRouter);
-app.use("/api/wallet", walletRouter);
+app.use("/api/portfolio", portfolioRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+  await connectDB();
+
+  try {
+    await sequelize.sync({ alter: true });
+    console.log("Models sincronizados com sucesso.");
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Sincronizacao com o banco falhou:", error);
+    process.exit(1);
+  }
+};
+
+startServer();

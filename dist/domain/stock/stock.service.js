@@ -14,122 +14,92 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StockService = void 0;
 const axios_1 = __importDefault(require("axios"));
-const stock_repository_1 = require("./stock.repository");
 const config_1 = require("../../config");
+const stock_repository_1 = require("./stock.repository");
+const stock_model_1 = require("./stock.model");
 class StockService {
     constructor() {
         this.stockRepository = new stock_repository_1.StockRepository();
     }
-    createStock(data) {
+    getCurrentPrice(ticker) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.validateStock(data);
-            return this.stockRepository.create(data);
+            var _a, _b;
+            try {
+                const response = yield axios_1.default.get(`${config_1.BRAPI_URL}/api/quote/${ticker}`, { params: { token: config_1.BRAPI_TOKEN } });
+                if (!((_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.results) === null || _b === void 0 ? void 0 : _b[0])) {
+                    throw new Error(`No data found for ticker: ${ticker}`);
+                }
+                const currentPrice = response.data.results[0].regularMarketPrice;
+                yield this.stockRepository.updateByTicker(ticker, currentPrice);
+                return currentPrice;
+            }
+            catch (error) {
+                console.error(`Error fetching stock price for ${ticker}:`, error.message);
+                return null;
+            }
         });
     }
-    getAllStocks(filters) {
+    createOrUpdateStock(stock, transaction) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.stockRepository.findAll(filters);
-        });
-    }
-    getStockById(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.stockRepository.findById(id);
+            if (!stock.ticker) {
+                throw new Error("Ticker é obrigatório para criar ou atualizar uma ação.");
+            }
+            const stockData = {
+                ticker: stock.ticker,
+                type: stock.type || stock_model_1.StockType.STOCK,
+                currentPrice: stock.currentPrice || 0,
+            };
+            const updatedStock = yield this.stockRepository.createOrUpdateStock(stockData, transaction);
+            return updatedStock;
         });
     }
     getStockQuote(ticker) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const response = yield axios_1.default.get(`${config_1.BRAPI_URL}/quote/${ticker}`, {
-                    params: { token: config_1.BRAPI_TOKEN },
-                });
-                const quoteData = response.data.results[0];
-                const quote = {
-                    symbol: quoteData.symbol,
-                    currency: quoteData.currency,
-                    currentPrice: quoteData.regularMarketPrice,
-                    change: quoteData.regularMarketChange,
-                    changePercent: quoteData.regularMarketChangePercent,
-                    updatedAt: new Date(quoteData.regularMarketTime * 1000),
+                const stock = yield this.stockRepository.findByTicker(ticker);
+                if (!stock) {
+                    throw new Error(`Ação com ticker ${ticker} não encontrada.`);
+                }
+                const currentPrice = yield this.getCurrentPrice(ticker);
+                if (currentPrice === null) {
+                    throw new Error(`Não foi possível obter o preço atual para ${ticker}.`);
+                }
+                const shortName = stock.ticker;
+                const stockQuote = {
+                    ticker: stock.ticker,
+                    type: stock.type,
+                    currentPrice: Number(currentPrice),
+                    shortName,
+                    lastUpdated: new Date(),
                 };
-                yield this.stockRepository.updateByTicker(ticker, {
-                    currentPrice: quote.currentPrice,
-                });
-                return quote;
+                return stockQuote;
             }
             catch (error) {
-                throw new Error(`Erro ao obter cotação da API externa: ${error.message}`);
-            }
-        });
-    }
-    getQuotes(tickers, options) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const params = {
-                    token: config_1.BRAPI_TOKEN,
-                };
-                if (options.range)
-                    params.range = options.range;
-                if (options.interval)
-                    params.interval = options.interval;
-                if (options.fundamental !== undefined)
-                    params.fundamental = options.fundamental;
-                if (options.dividends !== undefined)
-                    params.dividends = options.dividends;
-                if (options.modules)
-                    params.modules = options.modules.join(",");
-                const response = yield axios_1.default.get(`${config_1.BRAPI_URL}/quote/${tickers.join(",")}`, {
-                    params,
-                });
-                return response.data;
-            }
-            catch (error) {
-                throw new Error(`Erro ao obter cotações múltiplas: ${error.message}`);
+                console.error(`Erro em getStockQuote: ${error.message}`);
+                throw error;
             }
         });
     }
     fetchAvailableStocks(search) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             try {
-                const params = { token: config_1.BRAPI_TOKEN };
-                if (search) {
-                    params.search = search;
+                const response = yield axios_1.default.get(`${config_1.BRAPI_URL}/api/available`, { params: { token: config_1.BRAPI_TOKEN, search } });
+                if (!((_a = response.data) === null || _a === void 0 ? void 0 : _a.stocks)) {
+                    throw new Error("Invalid response format from BRAPI");
                 }
-                const response = yield axios_1.default.get(`${config_1.BRAPI_URL}/api/available`, {
-                    params,
-                });
-                return response.data;
+                return {
+                    stocks: response.data.stocks.map((ticker) => ({
+                        symbol: ticker,
+                        shortName: ticker,
+                        type: ticker.endsWith("11") ? "REIT" : "STOCK",
+                    })),
+                };
             }
             catch (error) {
-                throw new Error(`Erro ao buscar ações disponíveis: ${error.message}`);
+                throw new Error(`Error fetching available stocks: ${error.message}`);
             }
         });
-    }
-    syncStockPrices() {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const stocks = yield this.stockRepository.findAll({});
-                const tickers = stocks.map((stock) => stock.ticker);
-                const response = yield axios_1.default.get(`${config_1.BRAPI_URL}/api/quote/${tickers.join(",")}`, {
-                    params: { token: config_1.BRAPI_TOKEN },
-                });
-                const updates = response.data.results.map((quote) => ({
-                    ticker: quote.symbol,
-                    price: quote.regularMarketPrice,
-                }));
-                yield this.stockRepository.bulkUpdatePrices(updates);
-            }
-            catch (error) {
-                throw new Error(`Erro ao sincronizar preços das ações: ${error.message}`);
-            }
-        });
-    }
-    validateStock(data) {
-        if (!data.ticker || !data.type) {
-            throw new Error("Dados da ação inválidos: ticker e tipo são obrigatórios");
-        }
-        if (data.currentPrice !== undefined && data.currentPrice <= 0) {
-            throw new Error("Preço atual da ação deve ser maior que zero");
-        }
     }
 }
 exports.StockService = StockService;

@@ -1,18 +1,16 @@
 import { Router } from "express";
 import { StockController } from "./stock.controller";
-import { asyncHandler } from "../../middlewares";
+import { asyncHandler, authenticateHandler } from "../../middlewares";
 
 const stockRouter = Router();
 const stockController = new StockController();
 
-stockRouter.get("/", asyncHandler(stockController.getAllStocks));
-stockRouter.get("/available", asyncHandler(stockController.getAvailableStocks));
-stockRouter.get("/quote/:tickers", asyncHandler(stockController.getQuotes));
-stockRouter.get("/:id", asyncHandler(stockController.getStockById));
-stockRouter.post("/", asyncHandler(stockController.createStock));
+stockRouter.use(authenticateHandler);
+
 stockRouter.get(
-  "/quote/single/:ticker",
-  asyncHandler(stockController.getStockQuote)
+  "/market/available",
+  asyncHandler(stockController.getAvailableStocks)
 );
+stockRouter.get("/market/:ticker", asyncHandler(stockController.getStockQuote));
 
 export { stockRouter };

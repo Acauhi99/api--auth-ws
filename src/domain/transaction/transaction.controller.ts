@@ -34,7 +34,7 @@ export class TransactionController {
       const transactionData: CreateTransactionDTO = {
         ...req.body,
         type: TransactionType.BUY,
-        walletId: req.body.walletId,
+        portfolioId: req.body.portfolioId,
       };
 
       if (!this.isValidStockTransaction(transactionData)) {
@@ -63,7 +63,7 @@ export class TransactionController {
       const transactionData: CreateTransactionDTO = {
         ...req.body,
         type: TransactionType.SELL,
-        walletId: req.body.walletId,
+        portfolioId: req.body.portfolioId,
       };
 
       if (!this.isValidStockTransaction(transactionData)) {
@@ -95,7 +95,7 @@ export class TransactionController {
       const transactionData: CreateTransactionDTO = {
         type: TransactionType.DEPOSIT,
         amount: req.body.amount,
-        walletId: req.body.walletId,
+        portfolioId: req.body.portfolioId,
       };
 
       if (!this.isValidMoneyTransaction(transactionData)) {
@@ -120,7 +120,7 @@ export class TransactionController {
       const transactionData: CreateTransactionDTO = {
         type: TransactionType.WITHDRAWAL,
         amount: req.body.amount,
-        walletId: req.body.walletId,
+        portfolioId: req.body.portfolioId,
       };
 
       if (!this.isValidMoneyTransaction(transactionData)) {
@@ -173,13 +173,13 @@ export class TransactionController {
       data.amount &&
       data.amount > 0 &&
       data.quantity > 0 &&
-      data.walletId
+      data.portfolioId
     );
   }
 
   private isValidMoneyTransaction(
     data: Partial<CreateTransactionDTO>
   ): boolean {
-    return !!(data.amount && data.amount > 0 && data.walletId);
+    return !!(data.amount && data.amount > 0 && data.portfolioId);
   }
 }

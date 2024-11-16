@@ -1,57 +1,84 @@
 import { DividendRepository } from "./dividend.repository";
-import { WalletRepository } from "../wallet";
-import { TransactionRepository } from "../transaction/";
+import { PortfolioRepository } from "../portfolio";
+import { TransactionRepository } from "../transaction";
 import { CreateDividendDTO, DividendSummaryDTO } from "./dtos";
 import { TransactionType } from "../transaction";
 import { Dividend } from "./dividend.model";
 
 export class DividendService {
   private dividendRepository: DividendRepository;
-  private walletRepository: WalletRepository;
+  private portfolioRepository: PortfolioRepository;
   private transactionRepository: TransactionRepository;
 
   constructor() {
     this.dividendRepository = new DividendRepository();
-    this.walletRepository = new WalletRepository();
+    this.portfolioRepository = new PortfolioRepository();
     this.transactionRepository = new TransactionRepository();
   }
 
   async createDividend(data: CreateDividendDTO): Promise<Dividend> {
     await this.validateDividend(data);
+    const portfolio = await this.portfolioRepository.findById(data.portfolioId);
 
-    const wallet = await this.walletRepository.findById(data.walletId);
+    if (!portfolio) {
+      throw new Error("Carteira não encontrada");
+    }
 
     const dividend = await this.dividendRepository.create({
       ...data,
-      userId: wallet.userId,
+      userId: portfolio.userId,
     });
 
-    await this.walletRepository.update(data.walletId, {
-      availableBalance: wallet.availableBalance + data.amount,
-    });
+    portfolio.balance += data.amount;
+    await this.portfolioRepository.updateBalance(
+      portfolio.id,
+      portfolio.balance
+    );
 
     await this.transactionRepository.create({
       type: TransactionType.DIVIDEND,
       amount: data.amount,
-      walletId: data.walletId,
+      userId: portfolio.userId,
+      portfolioId: portfolio.id,
       stockId: data.stockId,
-      userId: wallet.userId,
     });
 
     return dividend;
   }
 
-  async getDividendsByUserId(userId: string): Promise<DividendSummaryDTO> {
+  async getDividendsByUserId(userId: string): Promise<Dividend[]> {
+    return this.dividendRepository.findByUserId(userId);
+  }
+
+  async getDividendSummary(userId: string): Promise<DividendSummaryDTO> {
     return this.dividendRepository.getDividendSummary(userId);
   }
 
+  async getDividendCalendar(
+    userId: string,
+    month: number,
+    year: number
+  ): Promise<Dividend[]> {
+    return this.dividendRepository.findUpcomingDividends(userId, month, year);
+  }
+
+  async getStockDividendHistory(
+    userId: string,
+    stockId: string
+  ): Promise<Dividend[]> {
+    return this.dividendRepository.findByStockId(userId, stockId);
+  }
+
   async calculateMonthlyDividends(
-    walletId: string,
+    portfolioId: string,
     month: number,
     year: number
   ): Promise<number> {
+    const portfolio = await this.portfolioRepository.findById(portfolioId);
+    if (!portfolio) throw new Error("Carteira não encontrada");
+
     return this.dividendRepository.calculateMonthlyDividends(
-      walletId,
+      portfolioId,
       month,
       year
     );
@@ -68,8 +95,17 @@ export class DividendService {
       );
     }
 
-    if (data.paymentDate < new Date()) {
-      throw new Error("A data de pagamento não pode estar no passado");
+    const portfolio = await this.portfolioRepository.findById(data.portfolioId);
+    if (!portfolio) {
+      throw new Error("Carteira não encontrada");
+    }
+
+    const portfolioStock = await this.portfolioRepository.findStockInPortfolio(
+      data.portfolioId,
+      data.stockId
+    );
+    if (!portfolioStock) {
+      throw new Error("Ação não encontrada na carteira");
     }
   }
 }

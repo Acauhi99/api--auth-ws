@@ -1,14 +1,10 @@
-import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../../sequelize";
-import { User } from "../user";
-import { Wallet } from "../wallet";
-import { Stock } from "../stock";
+import { DataTypes, Model, Optional, Sequelize } from "sequelize";
 import kuid from "kuid";
 
 export interface DividendAttributes {
   id: string;
   stockId: string;
-  walletId: string;
+  portfolioId: string;
   userId: string;
   amount: number;
   paymentDate: Date;
@@ -26,82 +22,77 @@ export class Dividend
 {
   public id!: string;
   public stockId!: string;
-  public walletId!: string;
+  public portfolioId!: string;
   public userId!: string;
   public amount!: number;
   public paymentDate!: Date;
   public declaredDate!: Date;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-}
 
-Dividend.init(
-  {
-    id: {
-      type: DataTypes.STRING,
-      defaultValue: kuid,
-      primaryKey: true,
-    },
-    stockId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      references: {
-        model: Stock,
-        key: "id",
-      },
-    },
-    walletId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      references: {
-        model: Wallet,
-        key: "id",
-      },
-    },
-    userId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      references: {
-        model: User,
-        key: "id",
-      },
-    },
-    amount: {
-      type: DataTypes.FLOAT,
-      allowNull: false,
-    },
-    paymentDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    declaredDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-  },
-  {
-    sequelize,
-    tableName: "dividends",
-    timestamps: true,
-    indexes: [
+  static initModel(sequelize: Sequelize): typeof Dividend {
+    Dividend.init(
       {
-        fields: ["userId"],
+        id: {
+          type: DataTypes.STRING,
+          defaultValue: () => kuid(),
+          primaryKey: true,
+        },
+        stockId: {
+          type: DataTypes.STRING,
+          allowNull: false,
+          references: {
+            model: "stocks",
+            key: "id",
+          },
+        },
+        portfolioId: {
+          type: DataTypes.STRING,
+          allowNull: false,
+          references: {
+            model: "portfolios",
+            key: "id",
+          },
+        },
+        userId: {
+          type: DataTypes.STRING,
+          allowNull: false,
+          references: {
+            model: "users",
+            key: "id",
+          },
+        },
+        amount: {
+          type: DataTypes.FLOAT,
+          allowNull: false,
+        },
+        paymentDate: {
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
+        declaredDate: {
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
       },
       {
-        fields: ["walletId"],
-      },
-      {
-        fields: ["stockId"],
-      },
-    ],
+        sequelize,
+        tableName: "dividends",
+        timestamps: true,
+        indexes: [
+          {
+            fields: ["userId"],
+          },
+          {
+            fields: ["portfolioId"],
+          },
+          {
+            fields: ["stockId"],
+          },
+        ],
+      }
+    );
+
+    return Dividend;
   }
-);
-
-User.hasMany(Dividend, { foreignKey: "userId" });
-Dividend.belongsTo(User, { foreignKey: "userId" });
-
-Wallet.hasMany(Dividend, { foreignKey: "walletId" });
-Dividend.belongsTo(Wallet, { foreignKey: "walletId" });
-
-Stock.hasMany(Dividend, { foreignKey: "stockId" });
-Dividend.belongsTo(Stock, { foreignKey: "stockId" });
+}

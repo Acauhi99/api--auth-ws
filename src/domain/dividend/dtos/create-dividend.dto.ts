@@ -1,6 +1,6 @@
 export interface CreateDividendDTO {
   stockId: string;
-  walletId: string;
+  portfolioId: string;
   amount: number;
   paymentDate: Date;
   declaredDate: Date;

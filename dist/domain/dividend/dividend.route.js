@@ -10,3 +10,6 @@ const dividendController = new dividend_controller_1.DividendController();
 dividendRouter.use(middlewares_1.authenticateHandler);
 dividendRouter.get("/", (0, middlewares_1.asyncHandler)(dividendController.getDividends));
 dividendRouter.post("/", (0, middlewares_1.asyncHandler)(dividendController.createDividend));
+dividendRouter.get("/summary", (0, middlewares_1.asyncHandler)(dividendController.getDividendSummary));
+dividendRouter.get("/calendar", (0, middlewares_1.asyncHandler)(dividendController.getDividendCalendar));
+dividendRouter.get("/history/:stockId", (0, middlewares_1.asyncHandler)(dividendController.getStockDividendHistory));

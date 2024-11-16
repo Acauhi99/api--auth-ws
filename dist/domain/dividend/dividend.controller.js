@@ -16,8 +16,8 @@ class DividendController {
         this.getDividends = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
-                const dividendSummary = yield this.dividendService.getDividendsByUserId(userId);
-                return res.status(200).json(dividendSummary);
+                const dividends = yield this.dividendService.getDividendsByUserId(userId);
+                return res.status(200).json(dividends);
             }
             catch (error) {
                 return res.status(500).json({ message: error.message });
@@ -29,7 +29,7 @@ class DividendController {
                 const dividendData = Object.assign(Object.assign({}, req.body), { userId });
                 if (!this.isValidCreateDividendDTO(dividendData)) {
                     return res.status(400).json({
-                        message: "Dados incompletos. stockId, walletId, amount, paymentDate e declaredDate são obrigatórios",
+                        message: "Dados incompletos. stockId, portfolioId, amount, paymentDate e declaredDate são obrigatórios",
                     });
                 }
                 const newDividend = yield this.dividendService.createDividend(dividendData);
@@ -39,11 +39,46 @@ class DividendController {
                 return res.status(500).json({ message: error.message });
             }
         });
+        this.getDividendSummary = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const summary = yield this.dividendService.getDividendSummary(userId);
+                return res.status(200).json(summary);
+            }
+            catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
+        this.getDividendCalendar = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const { month, year } = req.query;
+                const calendar = yield this.dividendService.getDividendCalendar(userId, Number(month) || new Date().getMonth() + 1, Number(year) || new Date().getFullYear());
+                return res.status(200).json(calendar);
+            }
+            catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
+        this.getStockDividendHistory = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const { stockId } = req.params;
+                if (!stockId) {
+                    return res.status(400).json({ message: "Stock ID é obrigatório" });
+                }
+                const history = yield this.dividendService.getStockDividendHistory(userId, stockId);
+                return res.status(200).json(history);
+            }
+            catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
         this.dividendService = new dividend_service_1.DividendService();
     }
     isValidCreateDividendDTO(data) {
         return !!(data.stockId &&
-            data.walletId &&
+            data.portfolioId &&
             data.amount &&
             data.paymentDate &&
             data.declaredDate);

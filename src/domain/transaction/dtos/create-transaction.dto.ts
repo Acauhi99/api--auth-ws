@@ -5,5 +5,14 @@ export interface CreateTransactionDTO {
   amount: number;
   quantity?: number;
   stockId?: string;
-  walletId: string;
+  portfolioId: string;
+}
+
+export interface CreateTransactionWithUserDTO extends CreateTransactionDTO {
+  userId: string;
+}
+
+export interface CreateTransactionWithUserAndPriceDTO
+  extends CreateTransactionWithUserDTO {
+  priceAtTransaction: number;
 }

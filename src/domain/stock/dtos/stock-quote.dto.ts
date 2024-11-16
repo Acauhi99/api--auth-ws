@@ -1,8 +1,7 @@
 export interface StockQuoteDTO {
-  symbol: string;
-  currency: string;
+  ticker: string;
+  type: string;
   currentPrice: number;
-  change: number;
-  changePercent: number;
-  updatedAt: Date;
+  shortName: string;
+  lastUpdated: Date;
 }

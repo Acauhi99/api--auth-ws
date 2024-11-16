@@ -4,25 +4,44 @@ import {
   TransactionType,
   TransactionWithStock,
 } from "./transaction.model";
-import { CreateTransactionDTO, TransactionFilterDTO } from "./dtos";
+import { CreateTransactionWithUserDTO, TransactionFilterDTO } from "./dtos";
 import { Stock } from "../stock";
+import { Transaction as SequelizeTransaction } from "sequelize";
 
 export class TransactionRepository {
   async create(
-    data: CreateTransactionDTO & { userId: string }
+    data: CreateTransactionWithUserDTO & { userId: string },
+    transaction?: SequelizeTransaction
   ): Promise<Transaction> {
     try {
-      return await Transaction.create(data);
+      return await Transaction.create(data, { transaction });
     } catch (error) {
       throw new Error(
-        `Erro ao criar transação: dados inválidos ou incompletos`
+        "Erro ao criar transação: dados inválidos ou incompletos"
       );
+    }
+  }
+
+  async findById(transactionId: string): Promise<Transaction | null> {
+    try {
+      return await Transaction.findOne({
+        where: { id: transactionId },
+        include: [
+          {
+            model: Stock,
+            attributes: ["ticker"],
+          },
+        ],
+      });
+    } catch (error) {
+      throw new Error(`Erro ao buscar a transação com ID ${transactionId}`);
     }
   }
 
   async findByUserId(
     userId: string,
-    filter: TransactionFilterDTO
+    filter: TransactionFilterDTO,
+    transaction?: SequelizeTransaction
   ): Promise<TransactionWithStock[]> {
     try {
       const where: any = { userId };
@@ -50,6 +69,7 @@ export class TransactionRepository {
           },
         ],
         order: [["createdAt", "DESC"]],
+        transaction,
       });
 
       return transactions as TransactionWithStock[];
@@ -58,30 +78,36 @@ export class TransactionRepository {
     }
   }
 
-  async findWalletTransactions(walletId: string): Promise<Transaction[]> {
+  async findPortfolioTransactions(
+    portfolioId: string,
+    transaction?: SequelizeTransaction
+  ): Promise<Transaction[]> {
     try {
       return await Transaction.findAll({
-        where: { walletId },
+        where: { portfolioId },
         order: [["createdAt", "ASC"]],
+        transaction,
       });
     } catch (error) {
-      throw new Error(`Erro ao buscar transações da carteira ${walletId}`);
+      throw new Error(`Erro ao buscar transações da carteira ${portfolioId}`);
     }
   }
 
   async getStockTransactionBalance(
-    walletId: string,
-    stockId: string
+    portfolioId: string,
+    stockId: string,
+    transaction?: SequelizeTransaction
   ): Promise<number> {
     try {
       const transactions = await Transaction.findAll({
         where: {
-          walletId,
+          portfolioId,
           stockId,
           type: {
             [Op.in]: [TransactionType.BUY, TransactionType.SELL],
           },
         },
+        transaction,
       });
 
       return transactions.reduce((balance, tx) => {
@@ -92,15 +118,19 @@ export class TransactionRepository {
       }, 0);
     } catch (error) {
       throw new Error(
-        `Erro ao calcular saldo de ações na carteira ${walletId} para o ativo ${stockId}`
+        `Erro ao calcular saldo de ações na carteira ${portfolioId} para o ativo ${stockId}`
       );
     }
   }
 
-  async getWalletBalance(walletId: string): Promise<number> {
+  async getPortfolioBalance(
+    portfolioId: string,
+    transaction?: SequelizeTransaction
+  ): Promise<number> {
     try {
       const transactions = await Transaction.findAll({
-        where: { walletId },
+        where: { portfolioId },
+        transaction,
       });
 
       return transactions.reduce((balance, tx) => {
@@ -117,7 +147,9 @@ export class TransactionRepository {
         }
       }, 0);
     } catch (error) {
-      throw new Error(`Erro ao calcular saldo total da carteira ${walletId}`);
+      throw new Error(
+        `Erro ao calcular saldo total da carteira ${portfolioId}`
+      );
     }
   }
 }
