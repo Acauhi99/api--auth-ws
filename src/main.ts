@@ -40,7 +40,7 @@ const startServer = async () => {
   await connectDB();
 
   try {
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false });
     console.log("Models sincronizados com sucesso.");
 
     app.listen(PORT, () => {
