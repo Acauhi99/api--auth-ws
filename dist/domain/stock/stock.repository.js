@@ -35,6 +35,14 @@ class StockRepository {
             yield Promise.all(updates.map(({ ticker, price }) => this.updateByTicker(ticker, price)));
         });
     }
+    bulkCreate(stocks) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return stock_model_1.Stock.bulkCreate(stocks, {
+                ignoreDuplicates: true,
+                returning: true,
+            });
+        });
+    }
     createOrUpdateStock(stock, transaction) {
         return __awaiter(this, void 0, void 0, function* () {
             const [updatedStock, created] = yield stock_model_1.Stock.findOrCreate({

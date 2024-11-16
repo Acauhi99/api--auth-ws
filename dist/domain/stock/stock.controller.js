@@ -14,40 +14,14 @@ const stock_service_1 = require("./stock.service");
 class StockController {
     constructor() {
         this.getAvailableStocks = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const search = req.query.search || "BR";
-                const availableStocks = yield this.stockService.fetchAvailableStocks(search);
-                return res.status(200).json(availableStocks);
-            }
-            catch (error) {
-                return res.status(500).json({
-                    message: "Erro ao buscar ações disponíveis",
-                    error: error.message,
-                });
-            }
+            const search = req.query.search;
+            const stocks = yield this.stockService.getAvailableStocks(search);
+            res.json(stocks);
         });
-        this.getStockQuote = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { ticker } = req.params;
-                if (!ticker) {
-                    return res.status(400).json({
-                        message: "Ticker é obrigatório",
-                    });
-                }
-                const quote = yield this.stockService.getStockQuote(ticker);
-                if (!quote) {
-                    return res.status(404).json({
-                        message: "Cotação não encontrada",
-                    });
-                }
-                return res.status(200).json(quote);
-            }
-            catch (error) {
-                return res.status(500).json({
-                    message: "Erro ao buscar cotação",
-                    error: error.message,
-                });
-            }
+        this.getStockInfo = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const ticker = req.params.ticker;
+            const stock = yield this.stockService.getStockInfo(ticker);
+            res.json(stock);
         });
         this.stockService = new stock_service_1.StockService();
     }

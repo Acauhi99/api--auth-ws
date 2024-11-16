@@ -90,8 +90,9 @@ class AuthService {
                 const newUserData = {
                     firstName: ((_a = githubUser.name) === null || _a === void 0 ? void 0 : _a.split(" ")[0]) || githubUser.login,
                     lastName: ((_b = githubUser.name) === null || _b === void 0 ? void 0 : _b.split(" ").slice(1).join(" ")) || "",
-                    email: githubUser.email || "",
+                    email: githubUser.email,
                     githubId: githubUser.id.toString(),
+                    password: yield bcryptjs_1.default.hash("defaultPassword", 10),
                 };
                 yield this.authRepository.save(newUserData);
                 user = yield this.authRepository.findByGithubId(githubUser.id.toString());

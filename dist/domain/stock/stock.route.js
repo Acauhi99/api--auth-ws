@@ -9,4 +9,4 @@ exports.stockRouter = stockRouter;
 const stockController = new stock_controller_1.StockController();
 stockRouter.use(middlewares_1.authenticateHandler);
 stockRouter.get("/market/available", (0, middlewares_1.asyncHandler)(stockController.getAvailableStocks));
-stockRouter.get("/market/:ticker", (0, middlewares_1.asyncHandler)(stockController.getStockQuote));
+stockRouter.get("/market/:ticker", (0, middlewares_1.asyncHandler)(stockController.getStockInfo));

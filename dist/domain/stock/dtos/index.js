@@ -14,7 +14,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./stock-quotes.dto"), exports);
-__exportStar(require("./stock-quote-response.dto"), exports);
-__exportStar(require("./stock-quote-result.dto"), exports);
+__exportStar(require("./external-brapi-api.dto"), exports);
 __exportStar(require("./stock-quote.dto"), exports);
