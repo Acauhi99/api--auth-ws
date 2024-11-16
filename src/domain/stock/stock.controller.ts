@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { StockService } from "./stock.service";
-import { StockQuoteDTO } from "./dtos";
 
 export class StockController {
   private stockService: StockService;
@@ -9,49 +8,17 @@ export class StockController {
     this.stockService = new StockService();
   }
 
-  getAvailableStocks = async (
-    req: Request,
-    res: Response
-  ): Promise<Response> => {
-    try {
-      const search = (req.query.search as string) || "BR";
-      const availableStocks = await this.stockService.fetchAvailableStocks(
-        search
-      );
-      return res.status(200).json(availableStocks);
-    } catch (error) {
-      return res.status(500).json({
-        message: "Erro ao buscar ações disponíveis",
-        error: (error as Error).message,
-      });
-    }
+  getAvailableStocks = async (req: Request, res: Response): Promise<void> => {
+    const search = req.query.search as string | undefined;
+    const stocks = await this.stockService.getAvailableStocks(search);
+
+    res.json(stocks);
   };
 
-  getStockQuote = async (req: Request, res: Response): Promise<Response> => {
-    try {
-      const { ticker } = req.params;
+  getStockInfo = async (req: Request, res: Response): Promise<void> => {
+    const ticker = req.params.ticker as string;
+    const stock = await this.stockService.getStockInfo(ticker);
 
-      if (!ticker) {
-        return res.status(400).json({
-          message: "Ticker é obrigatório",
-        });
-      }
-
-      const quote: StockQuoteDTO | null = await this.stockService.getStockQuote(
-        ticker
-      );
-      if (!quote) {
-        return res.status(404).json({
-          message: "Cotação não encontrada",
-        });
-      }
-
-      return res.status(200).json(quote);
-    } catch (error) {
-      return res.status(500).json({
-        message: "Erro ao buscar cotação",
-        error: (error as Error).message,
-      });
-    }
+    res.json(stock);
   };
 }

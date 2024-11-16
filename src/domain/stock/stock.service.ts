@@ -1,13 +1,15 @@
 import axios from "axios";
 import { BRAPI_TOKEN, BRAPI_URL } from "../../config";
-import { StockQuoteDTO, StockQuoteResponse } from "./dtos";
 import { StockRepository } from "./stock.repository";
+import { StockCreationAttributes, StockType } from "./stock.model";
 import {
-  StockAttributes,
-  StockCreationAttributes,
-  StockType,
-} from "./stock.model";
-import { Transaction as SequelizeTransaction } from "sequelize";
+  BrapiHistoricalData,
+  BrapiResponse,
+  BrapiStockQuote,
+  AvailableStocksResponse,
+  DividendDTO,
+  StockQuoteDTO,
+} from "./dtos";
 
 export class StockService {
   private stockRepository: StockRepository;
@@ -16,101 +18,167 @@ export class StockService {
     this.stockRepository = new StockRepository();
   }
 
-  async getCurrentPrice(ticker: string): Promise<number | null> {
+  async getAvailableStocks(search?: string): Promise<AvailableStocksResponse> {
     try {
-      const response = await axios.get<StockQuoteResponse>(
-        `${BRAPI_URL}/api/quote/${ticker}`,
-        { params: { token: BRAPI_TOKEN } }
-      );
-
-      if (!response.data?.results?.[0]) {
-        throw new Error(`No data found for ticker: ${ticker}`);
-      }
-
-      const currentPrice = response.data.results[0].regularMarketPrice;
-      await this.stockRepository.updateByTicker(ticker, currentPrice);
-      return currentPrice;
-    } catch (error) {
-      console.error(
-        `Error fetching stock price for ${ticker}:`,
-        (error as Error).message
-      );
-      return null;
-    }
-  }
-
-  async createOrUpdateStock(
-    stock: Partial<StockAttributes>,
-    transaction?: SequelizeTransaction
-  ): Promise<StockAttributes> {
-    if (!stock.ticker) {
-      throw new Error("Ticker é obrigatório para criar ou atualizar uma ação.");
-    }
-
-    const stockData: StockCreationAttributes = {
-      ticker: stock.ticker,
-      type: stock.type || StockType.STOCK,
-      currentPrice: stock.currentPrice || 0,
-    };
-
-    const updatedStock = await this.stockRepository.createOrUpdateStock(
-      stockData,
-      transaction
-    );
-    return updatedStock;
-  }
-
-  async getStockQuote(ticker: string): Promise<StockQuoteDTO | null> {
-    try {
-      const stock = await this.stockRepository.findByTicker(ticker);
-      if (!stock) {
-        throw new Error(`Ação com ticker ${ticker} não encontrada.`);
-      }
-
-      const currentPrice = await this.getCurrentPrice(ticker);
-      if (currentPrice === null) {
-        throw new Error(`Não foi possível obter o preço atual para ${ticker}.`);
-      }
-
-      const shortName = stock.ticker;
-
-      const stockQuote: StockQuoteDTO = {
-        ticker: stock.ticker,
-        type: stock.type,
-        currentPrice: Number(currentPrice),
-        shortName,
-        lastUpdated: new Date(),
-      };
-
-      return stockQuote;
-    } catch (error) {
-      console.error(`Erro em getStockQuote: ${(error as Error).message}`);
-      throw error;
-    }
-  }
-
-  async fetchAvailableStocks(search: string): Promise<any> {
-    try {
-      const response = await axios.get<{ stocks: string[] }>(
-        `${BRAPI_URL}/api/available`,
-        { params: { token: BRAPI_TOKEN, search } }
-      );
-
-      if (!response.data?.stocks) {
-        throw new Error("Invalid response format from BRAPI");
-      }
+      const stocks = await this.fetchBrapiAvailableStocks(search);
+      const brazilianStocks = this.filterBrazilianTickers(stocks);
+      await this.syncStocksWithDatabase(brazilianStocks);
 
       return {
-        stocks: response.data.stocks.map((ticker) => ({
-          symbol: ticker,
-          shortName: ticker,
-          type: ticker.endsWith("11") ? "REIT" : "STOCK",
+        stocks: brazilianStocks.map((stock) => ({
+          symbol: stock.ticker,
+          shortName: stock.ticker,
+          type: stock.type,
         })),
       };
     } catch (error) {
       throw new Error(
-        `Error fetching available stocks: ${(error as Error).message}`
+        `Erro ao buscar ativos disponíveis: ${(error as Error).message}`
       );
     }
+  }
+
+  async getStockInfo(ticker: string): Promise<StockQuoteDTO> {
+    try {
+      if (!ticker) throw new Error("Ticker é obrigatório");
+
+      const formattedTicker = ticker.toUpperCase().trim();
+      const stockData = await this.fetchBrapiStockQuote(formattedTicker);
+      const mockDividends = this.generateMockDividends(formattedTicker);
+
+      const stockQuote = this.mapToStockQuoteDTO(stockData, mockDividends);
+      await this.stockRepository.updateByTicker(
+        formattedTicker,
+        stockQuote.currentPrice
+      );
+
+      return stockQuote;
+    } catch (error) {
+      console.error("Erro ao buscar informações do ativo:", error);
+      throw error;
+    }
+  }
+
+  private async fetchBrapiAvailableStocks(search?: string): Promise<string[]> {
+    const response = await axios.get<{ stocks: string[] }>(
+      `${BRAPI_URL}/api/available`,
+      { params: { token: BRAPI_TOKEN, search } }
+    );
+
+    if (!response.data?.stocks) {
+      throw new Error("Formato de resposta inválido da BRAPI");
+    }
+
+    return response.data.stocks;
+  }
+
+  private async fetchBrapiStockQuote(ticker: string): Promise<BrapiStockQuote> {
+    try {
+      const response = await axios.get<BrapiResponse>(
+        `${BRAPI_URL}/api/quote/${ticker}`,
+        {
+          params: {
+            token: BRAPI_TOKEN,
+            range: "5d",
+            interval: "1d",
+            fundamental: true,
+          },
+          validateStatus: (status) => status === 200,
+        }
+      );
+
+      if (!response.data?.results?.[0]) {
+        throw new Error(`Nenhum dado encontrado para o ticker: ${ticker}`);
+      }
+
+      return response.data.results[0];
+    } catch (apiError: any) {
+      const mensagem = apiError.response?.data?.message || apiError.message;
+      const codigo = apiError.response?.status;
+      throw new Error(
+        `Erro na API BRAPI (${codigo}): ${mensagem} para o ticker ${ticker}`
+      );
+    }
+  }
+
+  private async syncStocksWithDatabase(
+    stocks: StockCreationAttributes[]
+  ): Promise<void> {
+    const existingStocks = await this.stockRepository.findByTickers(
+      stocks.map((stock) => stock.ticker)
+    );
+
+    const existingTickers = new Set(
+      existingStocks.map((stock) => stock.ticker)
+    );
+    const missingStocks = stocks.filter(
+      (stock) => !existingTickers.has(stock.ticker)
+    );
+
+    if (missingStocks.length > 0) {
+      await this.stockRepository.bulkCreate(missingStocks);
+    }
+  }
+
+  private mapToStockQuoteDTO(
+    stockData: BrapiStockQuote,
+    dividends: DividendDTO[]
+  ): StockQuoteDTO {
+    return {
+      symbol: stockData.symbol,
+      shortName: stockData.shortName,
+      currentPrice: stockData.regularMarketPrice,
+      previousClose: stockData.regularMarketPreviousClose,
+      priceChange: stockData.regularMarketChange,
+      priceChangePercent: stockData.regularMarketChangePercent,
+      updatedAt: new Date(stockData.regularMarketTime),
+      historicalData: (stockData.historicalDataPrice || []).map(
+        (item: BrapiHistoricalData) => ({
+          date: new Date(item.date * 1000),
+          open: item.open,
+          high: item.high,
+          low: item.low,
+          close: item.close,
+          volume: item.volume,
+        })
+      ),
+      dividends,
+    };
+  }
+
+  private filterBrazilianTickers(tickers: string[]): StockCreationAttributes[] {
+    const brStockPattern = /^[A-Z]{4}[3-8]$/;
+    const fiiFundPattern = /^[A-Z]{4}11$/;
+
+    return tickers
+      .filter(
+        (ticker) => brStockPattern.test(ticker) || fiiFundPattern.test(ticker)
+      )
+      .map((ticker) => ({
+        ticker,
+        type: ticker.endsWith("11") ? StockType.REIT : StockType.STOCK,
+        currentPrice: 0,
+      }));
+  }
+
+  private generateMockDividends(ticker: string): DividendDTO[] {
+    const now = new Date();
+    const mockDividends: DividendDTO[] = [];
+
+    for (let i = 0; i < 4; i++) {
+      const paymentDate = new Date(now);
+      paymentDate.setMonth(now.getMonth() - i * 3);
+
+      mockDividends.push({
+        paymentDate,
+        rate: Number((Math.random() * 1.5 + 0.5).toFixed(2)),
+        type: "DIVIDENDO",
+        relatedTo: `${Math.floor(
+          (12 - i * 3) / 3
+        )}º Trimestre/${now.getFullYear()}`,
+      });
+    }
+
+    return mockDividends;
   }
 }
