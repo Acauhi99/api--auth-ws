@@ -68,5 +68,34 @@ class TransactionRepository {
             });
         });
     }
+    findByPortfolioIdAndType(portfolioId, types, transaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return transaction_model_1.Transaction.findAll({
+                where: {
+                    portfolioId,
+                    type: {
+                        [sequelize_1.Op.in]: types,
+                    },
+                },
+                include: ["stock"],
+                order: [["date", "DESC"]],
+                transaction,
+            });
+        });
+    }
+    findByPortfolioIdAfterDate(portfolioId_1, date_1) {
+        return __awaiter(this, arguments, void 0, function* (portfolioId, date, types = [], transaction) {
+            return transaction_model_1.Transaction.findAll({
+                where: {
+                    portfolioId,
+                    type: types.length > 0 ? { [sequelize_1.Op.in]: types } : undefined,
+                    date: {
+                        [sequelize_1.Op.gte]: date,
+                    },
+                },
+                transaction,
+            });
+        });
+    }
 }
 exports.TransactionRepository = TransactionRepository;

@@ -26,47 +26,49 @@ class PortfolioController {
                     }
                     return res.status(500).json({ message: error.message });
                 }
-                return res.status(500).json({ message: "An unknown error occurred" });
+                return res.status(500).json({ message: "Ocorreu um erro desconhecido" });
             }
         });
-        this.getPortfolioOverview = (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.getPortfolioDetails = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
-                const overview = yield this.portfolioService.getOverview(userId);
-                return res.status(200).json(overview);
+                const portfolioDetails = yield this.portfolioService.getPortfolioDetails(userId);
+                return res.status(200).json(portfolioDetails);
             }
             catch (error) {
-                return res.status(500).json({ message: error.message });
+                if (error instanceof Error) {
+                    if (error.message === "Portfólio não encontrado") {
+                        return res.status(404).json({ message: error.message });
+                    }
+                    return res.status(500).json({ message: error.message });
+                }
+                return res.status(500).json({ message: "Ocorreu um erro desconhecido" });
             }
         });
-        this.getMonthlyPerformance = (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.getPositions = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
-                const performance = yield this.portfolioService.getMonthlyPerformance(userId);
+                const positions = yield this.portfolioService.getPositions(userId);
+                return res.status(200).json(positions);
+            }
+            catch (error) {
+                if (error instanceof Error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                return res.status(500).json({ message: "Ocorreu um erro desconhecido" });
+            }
+        });
+        this.getPerformance = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const performance = yield this.portfolioService.getPerformance(userId);
                 return res.status(200).json(performance);
             }
             catch (error) {
-                return res.status(500).json({ message: error.message });
-            }
-        });
-        this.getDividendsHistory = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const userId = req.user.id;
-                const dividends = yield this.portfolioService.getDividendsHistory(userId);
-                return res.status(200).json(dividends);
-            }
-            catch (error) {
-                return res.status(500).json({ message: error.message });
-            }
-        });
-        this.getPortfolioHistory = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const userId = req.user.id;
-                const history = yield this.portfolioService.getPortfolioHistory(userId);
-                return res.status(200).json(history);
-            }
-            catch (error) {
-                return res.status(500).json({ message: error.message });
+                if (error instanceof Error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                return res.status(500).json({ message: "Ocorreu um erro desconhecido" });
             }
         });
         this.portfolioService = new portfolio_service_1.PortfolioService();
