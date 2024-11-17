@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { PortfolioService } from "./portfolio.service";
-import { AddStockDTO } from "./dtos";
 
 export class PortfolioController {
   private portfolioService: PortfolioService;
@@ -9,74 +8,73 @@ export class PortfolioController {
     this.portfolioService = new PortfolioService();
   }
 
-  async getPortfolio(req: Request, res: Response) {
-    const userId = req.user.id;
-    const portfolio = await this.portfolioService.getPortfolioByUserId(userId);
-    res.json(portfolio);
-  }
-
-  async addStockToPortfolio(req: Request, res: Response) {
-    const userId = req.user.id;
-    const addStockDTO: AddStockDTO = req.body;
-
-    if (!addStockDTO.stockId || !addStockDTO.quantity) {
-      return res
-        .status(400)
-        .json({ message: "stockId e quantity são obrigatórios." });
-    }
-
+  createPortfolio = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const result = await this.portfolioService.buyStock(
-        userId,
-        addStockDTO.stockId,
-        addStockDTO.quantity
+      const userId = req.user!.id;
+      const portfolio = await this.portfolioService.createPortfolio(userId);
+      return res.status(201).json(portfolio);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.message === "Portfolio already exists") {
+          return res.status(409).json({ message: error.message });
+        }
+        return res.status(500).json({ message: error.message });
+      }
+      return res.status(500).json({ message: "An unknown error occurred" });
+    }
+  };
+
+  getPortfolioOverview = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const userId = req.user!.id;
+      const overview = await this.portfolioService.getOverview(userId);
+      return res.status(200).json(overview);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
+    }
+  };
+
+  getMonthlyPerformance = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    try {
+      const userId = req.user!.id;
+      const performance = await this.portfolioService.getMonthlyPerformance(
+        userId
       );
-      res.status(201).json(result);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      return res.status(200).json(performance);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
     }
-  }
+  };
 
-  async removeStockFromPortfolio(req: Request, res: Response) {
-    const userId = req.user.id;
-    const { stockId } = req.params;
-    const { quantity } = req.body;
-
-    if (!stockId || !quantity) {
-      return res
-        .status(400)
-        .json({ message: "stockId e quantity são obrigatórios." });
-    }
-
+  getDividendsHistory = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
     try {
-      const result = await this.portfolioService.sellStock(
-        userId,
-        stockId,
-        quantity
-      );
-      res.json(result);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      const userId = req.user!.id;
+      const dividends = await this.portfolioService.getDividendsHistory(userId);
+      return res.status(200).json(dividends);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
     }
-  }
+  };
 
-  async getPortfolioSummary(req: Request, res: Response) {
-    const userId = req.user.id;
+  getPortfolioHistory = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
     try {
-      const summary = await this.portfolioService.getSummary(userId);
-      res.json(summary);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      const userId = req.user!.id;
+      const history = await this.portfolioService.getPortfolioHistory(userId);
+      return res.status(200).json(history);
+    } catch (error) {
+      return res.status(500).json({ message: (error as Error).message });
     }
-  }
-
-  async getPortfolioPerformance(req: Request, res: Response) {
-    const userId = req.user.id;
-    try {
-      const performance = await this.portfolioService.getPerformance(userId);
-      res.json(performance);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  }
+  };
 }

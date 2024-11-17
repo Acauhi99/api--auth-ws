@@ -7,33 +7,26 @@ const portfolioController = new PortfolioController();
 
 portfolioRouter.use(authenticateHandler);
 
+portfolioRouter.post("/", asyncHandler(portfolioController.createPortfolio));
+
 portfolioRouter.get(
-  "/",
-  asyncHandler(portfolioController.getPortfolio.bind(portfolioController))
+  "/overview",
+  asyncHandler(portfolioController.getPortfolioOverview)
 );
-portfolioRouter.post(
-  "/stocks",
-  asyncHandler(
-    portfolioController.addStockToPortfolio.bind(portfolioController)
-  )
-);
-portfolioRouter.delete(
-  "/stocks/:stockId",
-  asyncHandler(
-    portfolioController.removeStockFromPortfolio.bind(portfolioController)
-  )
-);
+
 portfolioRouter.get(
-  "/summary",
-  asyncHandler(
-    portfolioController.getPortfolioSummary.bind(portfolioController)
-  )
+  "/performance/monthly",
+  asyncHandler(portfolioController.getMonthlyPerformance)
 );
+
 portfolioRouter.get(
-  "/performance",
-  asyncHandler(
-    portfolioController.getPortfolioPerformance.bind(portfolioController)
-  )
+  "/dividends",
+  asyncHandler(portfolioController.getDividendsHistory)
+);
+
+portfolioRouter.get(
+  "/history",
+  asyncHandler(portfolioController.getPortfolioHistory)
 );
 
 export { portfolioRouter };

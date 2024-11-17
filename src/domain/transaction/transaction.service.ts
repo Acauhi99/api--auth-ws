@@ -19,76 +19,103 @@ export class TransactionService {
   ): Promise<Transaction> {
     const t = await sequelize.transaction();
 
-    const portfolio = await this.portfolioRepository.findById(
-      transactionData.portfolioId,
-      t
-    );
-
-    if (!portfolio) {
-      await t.rollback();
-      throw new Error("Portfólio não encontrado");
-    }
-
-    if (portfolio.userId !== userId) {
-      await t.rollback();
-      throw new Error("O portfólio não pertence ao usuário");
-    }
-
-    if (transactionData.type === TransactionType.BUY) {
-      await this.validateBuyTransaction(
-        portfolio.balance,
-        transactionData.amount
-      );
-
-      await this.portfolioRepository.updateBalance(
-        portfolio.id,
-        portfolio.balance - transactionData.amount,
+    try {
+      const portfolio = await this.portfolioRepository.findById(
+        transactionData.portfolioId,
         t
       );
-    } else if (transactionData.type === TransactionType.SELL) {
-      const currentPosition =
-        await this.transactionRepository.getCurrentPosition(
-          userId,
-          transactionData.ticker!,
-          t
-        );
 
-      if (currentPosition < transactionData.quantity!) {
-        await t.rollback();
-        throw new Error("Quantidade insuficiente de ações");
+      if (!portfolio) {
+        throw new Error("Portfólio não encontrado");
       }
 
-      await this.portfolioRepository.updateBalance(
-        portfolio.id,
-        portfolio.balance + transactionData.amount,
+      if (portfolio.userId !== userId) {
+        throw new Error("O portfólio não pertence ao usuário");
+      }
+
+      // Mapeamento de handlers por tipo de transação
+      const handlers: Record<TransactionType, () => Promise<void>> = {
+        [TransactionType.BUY]: async () => {
+          await this.validateBuyTransaction(
+            portfolio.balance,
+            transactionData.amount
+          );
+
+          await this.portfolioRepository.updateBalance(
+            portfolio.id,
+            portfolio.balance - transactionData.amount,
+            t
+          );
+        },
+        [TransactionType.SELL]: async () => {
+          const currentPosition =
+            await this.transactionRepository.getCurrentPosition(
+              userId,
+              transactionData.ticker!,
+              t
+            );
+
+          if (currentPosition < transactionData.quantity!) {
+            throw new Error("Quantidade insuficiente de ações");
+          }
+
+          await this.portfolioRepository.updateBalance(
+            portfolio.id,
+            portfolio.balance + transactionData.amount,
+            t
+          );
+        },
+        [TransactionType.DEPOSIT]: async () => {
+          await this.portfolioRepository.updateBalance(
+            portfolio.id,
+            portfolio.balance + transactionData.amount,
+            t
+          );
+        },
+        [TransactionType.WITHDRAWAL]: async () => {
+          await this.validateWithdrawal(
+            portfolio.balance,
+            transactionData.amount
+          );
+
+          await this.portfolioRepository.updateBalance(
+            portfolio.id,
+            portfolio.balance - transactionData.amount,
+            t
+          );
+        },
+        [TransactionType.DIVIDEND]: async () => {
+          await this.portfolioRepository.updateBalance(
+            portfolio.id,
+            portfolio.balance + transactionData.amount,
+            t
+          );
+        },
+      };
+
+      const handler = handlers[transactionData.type];
+
+      if (!handler) {
+        throw new Error("Tipo de transação inválido");
+      }
+
+      await handler();
+
+      const transaction = await this.transactionRepository.create(
+        {
+          ...transactionData,
+          userId,
+          date: new Date(),
+        },
         t
       );
-    } else if (transactionData.type === TransactionType.DEPOSIT) {
-      await this.portfolioRepository.updateBalance(
-        portfolio.id,
-        portfolio.balance + transactionData.amount,
-        t
-      );
-    } else if (transactionData.type === TransactionType.WITHDRAWAL) {
-      await this.validateWithdrawal(portfolio.balance, transactionData.amount);
-      await this.portfolioRepository.updateBalance(
-        portfolio.id,
-        portfolio.balance - transactionData.amount,
-        t
-      );
+
+      await t.commit();
+      return transaction;
+    } catch (error) {
+      await t.rollback();
+      throw error;
     }
-
-    const transaction = await this.transactionRepository.create(
-      {
-        ...transactionData,
-        userId,
-        date: new Date(),
-      },
-      t
-    );
-
-    await t.commit();
-    return transaction;
   }
 
   async getTransactionHistory(userId: string): Promise<Transaction[]> {

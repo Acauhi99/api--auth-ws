@@ -3,7 +3,6 @@ import express, { Request, Response } from "express";
 import { PORT } from "./config";
 import {
   authRouter,
-  dividendRouter,
   stockRouter,
   transactionRouter,
   userRouter,
@@ -31,7 +30,6 @@ app.get("/", (_: Request, res: Response) => {
 // Registro das rotas
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
-app.use("/api/dividend", dividendRouter);
 app.use("/api/stock", stockRouter);
 app.use("/api/transaction", transactionRouter);
 app.use("/api/portfolio", portfolioRouter);
@@ -40,7 +38,7 @@ const startServer = async () => {
   await connectDB();
 
   try {
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false });
     console.log("Models sincronizados com sucesso.");
 
     app.listen(PORT, () => {

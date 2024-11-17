@@ -7,19 +7,27 @@ const transactionController = new TransactionController();
 
 transactionRouter.use(authenticateHandler);
 
-transactionRouter.get("/", asyncHandler(transactionController.getTransactions));
+// Stock operations
 transactionRouter.post(
-  "/stocks/buy",
+  "/stock/buy",
   asyncHandler(transactionController.buyStock)
 );
 transactionRouter.post(
-  "/stocks/sell",
+  "/stock/sell",
   asyncHandler(transactionController.sellStock)
 );
+
+// Money operations
 transactionRouter.post("/deposit", asyncHandler(transactionController.deposit));
 transactionRouter.post(
   "/withdraw",
   asyncHandler(transactionController.withdraw)
+);
+
+// History
+transactionRouter.get(
+  "/history",
+  asyncHandler(transactionController.getTransactionHistory)
 );
 
 export { transactionRouter };

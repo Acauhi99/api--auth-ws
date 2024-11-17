@@ -14,7 +14,7 @@ export class AuthRepository {
 
   async save(userData: UserCreateFieldsDTO): Promise<void> {
     try {
-      await User.create(userData as any);
+      await User.create(userData as User);
     } catch (error) {
       throw new Error("Erro ao criar usuário");
     }

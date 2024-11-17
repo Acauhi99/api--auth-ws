@@ -4,15 +4,12 @@ export interface CreateTransactionDTO {
   type: TransactionType;
   amount: number;
   quantity?: number;
-  stockId?: string;
+  ticker?: string;
   portfolioId: string;
+  price?: number;
 }
 
 export interface CreateTransactionWithUserDTO extends CreateTransactionDTO {
   userId: string;
-}
-
-export interface CreateTransactionWithUserAndPriceDTO
-  extends CreateTransactionWithUserDTO {
-  priceAtTransaction: number;
+  date: Date;
 }

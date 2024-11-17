@@ -1,12 +1,5 @@
-import {
-  DataTypes,
-  Model,
-  Optional,
-  HasManyGetAssociationsMixin,
-  HasManyAddAssociationMixin,
-  Sequelize,
-} from "sequelize";
-import { PortfolioStock } from "./portfolio-stock.model";
+import kuid from "kuid";
+import { DataTypes, Model, Optional, Sequelize } from "sequelize";
 
 export interface PortfolioAttributes {
   id: string;
@@ -31,17 +24,13 @@ export class Portfolio
   public balance!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-  public readonly portfolioStocks?: PortfolioStock[];
-
-  public getPortfolioStocks!: HasManyGetAssociationsMixin<PortfolioStock>;
-  public addPortfolioStock!: HasManyAddAssociationMixin<PortfolioStock, string>;
 
   static initModel(sequelize: Sequelize): typeof Portfolio {
     Portfolio.init(
       {
         id: {
           type: DataTypes.STRING,
-          defaultValue: () => `portfolio_${Date.now()}`,
+          defaultValue: () => kuid(),
           primaryKey: true,
         },
         userId: {
@@ -54,7 +43,7 @@ export class Portfolio
           unique: true,
         },
         balance: {
-          type: DataTypes.FLOAT,
+          type: DataTypes.DECIMAL(10, 2),
           allowNull: false,
           defaultValue: 0,
         },

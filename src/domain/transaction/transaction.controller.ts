@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
 import { TransactionService } from "./transaction.service";
 import { TransactionType } from "./transaction.model";
-import {
-  CreateTransactionDTO,
-  TransactionFilterDTO,
-  TransactionHistoryDTO,
-} from "./dtos";
+import { CreateTransactionDTO } from "./dtos";
 
 export class TransactionController {
   private transactionService: TransactionService;
@@ -14,33 +10,29 @@ export class TransactionController {
     this.transactionService = new TransactionService();
   }
 
-  getTransactions = async (req: Request, res: Response): Promise<Response> => {
+  private handleStockTransaction = async (
+    req: Request,
+    res: Response,
+    type: TransactionType.BUY | TransactionType.SELL
+  ): Promise<Response> => {
     try {
       const userId = req.user!.id;
-      const filters: TransactionFilterDTO = req.query;
 
-      const transactions =
-        await this.transactionService.getTransactionsByUserId(userId, filters);
+      const { ticker, quantity, amount, portfolioId } = req.body;
 
-      return res.status(200).json(transactions);
-    } catch (error) {
-      return res.status(500).json({ message: (error as Error).message });
-    }
-  };
-
-  buyStock = async (req: Request, res: Response): Promise<Response> => {
-    try {
-      const userId = req.user!.id;
       const transactionData: CreateTransactionDTO = {
-        ...req.body,
-        type: TransactionType.BUY,
-        portfolioId: req.body.portfolioId,
+        type,
+        ticker,
+        quantity,
+        amount,
+        portfolioId,
+        price: amount / quantity,
       };
 
       if (!this.isValidStockTransaction(transactionData)) {
         return res.status(400).json({
           message:
-            "Dados incompletos. stockId, quantity e amount são obrigatórios",
+            "Dados incompletos. 'ticker', 'quantity' e 'amount' são obrigatórios",
         });
       }
 
@@ -48,119 +40,108 @@ export class TransactionController {
         userId,
         transactionData
       );
+
       return res.status(201).json(transaction);
     } catch (error) {
-      if (error instanceof Error && error.message === "Saldo insuficiente") {
-        return res.status(400).json({ message: error.message });
+      if (error instanceof Error) {
+        if (
+          error.message === "Saldo insuficiente" ||
+          error.message === "Quantidade insuficiente de ações"
+        ) {
+          return res.status(400).json({ message: error.message });
+        }
+        return res.status(500).json({ message: error.message });
       }
-      return res.status(500).json({ message: (error as Error).message });
+      return res.status(500).json({ message: "Erro interno do servidor" });
     }
   };
 
-  sellStock = async (req: Request, res: Response): Promise<Response> => {
-    try {
-      const userId = req.user!.id;
-      const transactionData: CreateTransactionDTO = {
-        ...req.body,
-        type: TransactionType.SELL,
-        portfolioId: req.body.portfolioId,
-      };
+  buyStock = (req: Request, res: Response): Promise<Response> => {
+    return this.handleStockTransaction(req, res, TransactionType.BUY);
+  };
 
-      if (!this.isValidStockTransaction(transactionData)) {
-        return res.status(400).json({
-          message:
-            "Dados incompletos. stockId, quantity e amount são obrigatórios",
-        });
-      }
-
-      const transaction = await this.transactionService.createTransaction(
-        userId,
-        transactionData
-      );
-      return res.status(201).json(transaction);
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "Quantidade insuficiente de ações"
-      ) {
-        return res.status(400).json({ message: error.message });
-      }
-      return res.status(500).json({ message: (error as Error).message });
-    }
+  sellStock = (req: Request, res: Response): Promise<Response> => {
+    return this.handleStockTransaction(req, res, TransactionType.SELL);
   };
 
   deposit = async (req: Request, res: Response): Promise<Response> => {
     try {
       const userId = req.user!.id;
+      const { amount, portfolioId } = req.body;
+
       const transactionData: CreateTransactionDTO = {
         type: TransactionType.DEPOSIT,
-        amount: req.body.amount,
-        portfolioId: req.body.portfolioId,
+        amount,
+        portfolioId,
+        price: 1,
       };
 
       if (!this.isValidMoneyTransaction(transactionData)) {
-        return res.status(400).json({
-          message: "Valor de depósito inválido",
-        });
+        return res.status(400).json({ message: "Valor de depósito inválido" });
       }
 
       const transaction = await this.transactionService.createTransaction(
         userId,
         transactionData
       );
+
       return res.status(201).json(transaction);
     } catch (error) {
-      return res.status(500).json({ message: (error as Error).message });
+      if (error instanceof Error) {
+        return res.status(500).json({ message: error.message });
+      }
+      return res.status(500).json({ message: "Erro interno do servidor" });
     }
   };
 
   withdraw = async (req: Request, res: Response): Promise<Response> => {
     try {
       const userId = req.user!.id;
+      const { amount, portfolioId } = req.body;
+
       const transactionData: CreateTransactionDTO = {
         type: TransactionType.WITHDRAWAL,
-        amount: req.body.amount,
-        portfolioId: req.body.portfolioId,
+        amount,
+        portfolioId,
+        price: 1,
       };
 
       if (!this.isValidMoneyTransaction(transactionData)) {
-        return res.status(400).json({
-          message: "Valor de saque inválido",
-        });
+        return res.status(400).json({ message: "Valor de saque inválido" });
       }
 
       const transaction = await this.transactionService.createTransaction(
         userId,
         transactionData
       );
+
       return res.status(201).json(transaction);
     } catch (error) {
-      if (error instanceof Error && error.message === "Saldo insuficiente") {
-        return res.status(400).json({ message: error.message });
+      if (error instanceof Error) {
+        if (error.message === "Saldo insuficiente") {
+          return res.status(400).json({ message: error.message });
+        }
+        return res.status(500).json({ message: error.message });
       }
-      return res.status(500).json({ message: (error as Error).message });
+      return res.status(500).json({ message: "Erro interno do servidor" });
     }
   };
 
-  getDetailedHistory = async (
+  getTransactionHistory = async (
     req: Request,
     res: Response
   ): Promise<Response> => {
     try {
       const userId = req.user!.id;
-      const filters: TransactionFilterDTO = {
-        startDate: req.query.startDate as string,
-        endDate: req.query.endDate as string,
-        type: req.query.type as string[],
-        stockId: req.query.stockId as string,
-      };
-
-      const history: TransactionHistoryDTO[] =
-        await this.transactionService.getDetailedHistory(userId, filters);
-
-      return res.status(200).json(history);
+      const transactions = await this.transactionService.getTransactionHistory(
+        userId
+      );
+      return res.status(200).json(transactions);
     } catch (error) {
-      return res.status(500).json({ message: (error as Error).message });
+      if (error instanceof Error) {
+        return res.status(500).json({ message: error.message });
+      }
+      return res.status(500).json({ message: "Erro interno do servidor" });
     }
   };
 
@@ -168,7 +149,7 @@ export class TransactionController {
     data: Partial<CreateTransactionDTO>
   ): boolean {
     return !!(
-      data.stockId &&
+      data.ticker &&
       data.quantity &&
       data.amount &&
       data.amount > 0 &&
