@@ -13,75 +13,63 @@ exports.PortfolioController = void 0;
 const portfolio_service_1 = require("./portfolio.service");
 class PortfolioController {
     constructor() {
+        this.createPortfolio = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const portfolio = yield this.portfolioService.createPortfolio(userId);
+                return res.status(201).json(portfolio);
+            }
+            catch (error) {
+                if (error instanceof Error) {
+                    if (error.message === "Portfolio already exists") {
+                        return res.status(409).json({ message: error.message });
+                    }
+                    return res.status(500).json({ message: error.message });
+                }
+                return res.status(500).json({ message: "An unknown error occurred" });
+            }
+        });
+        this.getPortfolioOverview = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const overview = yield this.portfolioService.getOverview(userId);
+                return res.status(200).json(overview);
+            }
+            catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
+        this.getMonthlyPerformance = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const performance = yield this.portfolioService.getMonthlyPerformance(userId);
+                return res.status(200).json(performance);
+            }
+            catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
+        this.getDividendsHistory = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const dividends = yield this.portfolioService.getDividendsHistory(userId);
+                return res.status(200).json(dividends);
+            }
+            catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
+        this.getPortfolioHistory = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.user.id;
+                const history = yield this.portfolioService.getPortfolioHistory(userId);
+                return res.status(200).json(history);
+            }
+            catch (error) {
+                return res.status(500).json({ message: error.message });
+            }
+        });
         this.portfolioService = new portfolio_service_1.PortfolioService();
-    }
-    getPortfolio(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const userId = req.user.id;
-            const portfolio = yield this.portfolioService.getPortfolioByUserId(userId);
-            res.json(portfolio);
-        });
-    }
-    addStockToPortfolio(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const userId = req.user.id;
-            const addStockDTO = req.body;
-            if (!addStockDTO.stockId || !addStockDTO.quantity) {
-                return res
-                    .status(400)
-                    .json({ message: "stockId e quantity são obrigatórios." });
-            }
-            try {
-                const result = yield this.portfolioService.buyStock(userId, addStockDTO.stockId, addStockDTO.quantity);
-                res.status(201).json(result);
-            }
-            catch (error) {
-                res.status(400).json({ message: error.message });
-            }
-        });
-    }
-    removeStockFromPortfolio(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const userId = req.user.id;
-            const { stockId } = req.params;
-            const { quantity } = req.body;
-            if (!stockId || !quantity) {
-                return res
-                    .status(400)
-                    .json({ message: "stockId e quantity são obrigatórios." });
-            }
-            try {
-                const result = yield this.portfolioService.sellStock(userId, stockId, quantity);
-                res.json(result);
-            }
-            catch (error) {
-                res.status(400).json({ message: error.message });
-            }
-        });
-    }
-    getPortfolioSummary(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const userId = req.user.id;
-            try {
-                const summary = yield this.portfolioService.getSummary(userId);
-                res.json(summary);
-            }
-            catch (error) {
-                res.status(400).json({ message: error.message });
-            }
-        });
-    }
-    getPortfolioPerformance(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const userId = req.user.id;
-            try {
-                const performance = yield this.portfolioService.getPerformance(userId);
-                res.json(performance);
-            }
-            catch (error) {
-                res.status(400).json({ message: error.message });
-            }
-        });
     }
 }
 exports.PortfolioController = PortfolioController;

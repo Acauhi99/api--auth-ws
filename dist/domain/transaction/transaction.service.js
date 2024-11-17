@@ -10,165 +10,81 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionService = void 0;
-const sequelize_1 = require("../../sequelize");
-const transaction_repository_1 = require("./transaction.repository");
-const portfolio_1 = require("../portfolio");
-const portfolio_2 = require("../portfolio");
-const stock_1 = require("../stock");
 const transaction_model_1 = require("./transaction.model");
+const transaction_repository_1 = require("./transaction.repository");
+const portfolio_repository_1 = require("../portfolio/portfolio.repository");
+const sequelize_1 = require("../../sequelize");
 class TransactionService {
     constructor() {
         this.transactionRepository = new transaction_repository_1.TransactionRepository();
-        this.portfolioRepository = new portfolio_1.PortfolioRepository();
-        this.portfolioStockRepository = new portfolio_2.PortfolioStockRepository();
-        this.stockRepository = new stock_1.StockRepository();
+        this.portfolioRepository = new portfolio_repository_1.PortfolioRepository();
     }
-    createTransaction(userId, data) {
+    createTransaction(userId, transactionData) {
         return __awaiter(this, void 0, void 0, function* () {
-            const transaction = yield this.transactionRepository.create(Object.assign(Object.assign({}, data), { userId }));
-            return transaction;
-        });
-    }
-    getTransactionsByUserId(userId, filter) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.transactionRepository.findByUserId(userId, filter);
-        });
-    }
-    getDetailedHistory(userId, filter) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const transactions = yield this.getTransactionsByUserId(userId, filter);
-            let balance = 0;
-            return transactions.map((tx) => {
-                var _a;
-                balance += this.calculateBalanceImpact(tx);
-                return {
-                    date: tx.createdAt,
-                    type: tx.type,
-                    stockTicker: (_a = tx.stock) === null || _a === void 0 ? void 0 : _a.ticker,
-                    quantity: tx.quantity,
-                    price: tx.quantity ? tx.amount / tx.quantity : 0,
-                    total: tx.amount,
-                    balance,
-                };
-            });
-        });
-    }
-    buyStock(userId, stockId, quantity) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (quantity <= 0)
-                throw new Error("A quantidade deve ser maior que zero.");
-            return yield sequelize_1.sequelize.transaction((t) => __awaiter(this, void 0, void 0, function* () {
-                const portfolio = yield this.portfolioRepository.findByUserId(userId, t);
-                if (!portfolio)
-                    throw new Error("Carteira não encontrada.");
-                const stock = yield this.stockRepository.findById(stockId);
-                if (!stock)
-                    throw new Error("Ação não encontrada.");
-                const currentPrice = stock.currentPrice;
-                if (currentPrice === null || currentPrice === undefined)
-                    throw new Error("Preço atual da ação não disponível.");
-                const totalAmount = currentPrice * quantity;
-                if (portfolio.balance < totalAmount)
-                    throw new Error("Saldo insuficiente para a compra.");
-                yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance - totalAmount, t);
-                yield this.portfolioStockRepository.addOrUpdateStock(portfolio.id, stockId, quantity, currentPrice, t);
-                const transaction = yield this.transactionRepository.create({
-                    type: transaction_model_1.TransactionType.BUY,
-                    amount: totalAmount,
-                    quantity,
-                    userId,
-                    portfolioId: portfolio.id,
-                    stockId,
-                }, t);
-                return transaction;
-            }));
-        });
-    }
-    sellStock(userId, stockId, quantity) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (quantity <= 0)
-                throw new Error("A quantidade deve ser maior que zero.");
-            return yield sequelize_1.sequelize.transaction((t) => __awaiter(this, void 0, void 0, function* () {
-                const portfolio = yield this.portfolioRepository.findByUserId(userId, t);
-                if (!portfolio)
-                    throw new Error("Carteira não encontrada.");
-                const portfolioStock = yield this.portfolioStockRepository.findStockInPortfolio(portfolio.id, stockId, t);
-                if (!portfolioStock || portfolioStock.quantity < quantity) {
-                    throw new Error("Quantidade insuficiente de ações para venda.");
+            const t = yield sequelize_1.sequelize.transaction();
+            try {
+                const portfolio = yield this.portfolioRepository.findById(transactionData.portfolioId, t);
+                if (!portfolio) {
+                    throw new Error("Portfólio não encontrado");
                 }
-                const stock = yield this.stockRepository.findById(stockId);
-                if (!stock)
-                    throw new Error("Ação não encontrada.");
-                const currentPrice = stock.currentPrice;
-                if (currentPrice === null || currentPrice === undefined)
-                    throw new Error("Preço atual da ação não disponível.");
-                const totalAmount = currentPrice * quantity;
-                yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance + totalAmount, t);
-                yield this.portfolioStockRepository.removeStock(portfolio.id, stockId, quantity, t);
-                const transaction = yield this.transactionRepository.create({
-                    type: transaction_model_1.TransactionType.SELL,
-                    amount: totalAmount,
-                    quantity,
-                    userId,
-                    portfolioId: portfolio.id,
-                    stockId,
-                }, t);
+                if (portfolio.userId !== userId) {
+                    throw new Error("O portfólio não pertence ao usuário");
+                }
+                // Mapeamento de handlers por tipo de transação
+                const handlers = {
+                    [transaction_model_1.TransactionType.BUY]: () => __awaiter(this, void 0, void 0, function* () {
+                        yield this.validateBuyTransaction(portfolio.balance, transactionData.amount);
+                        yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance - transactionData.amount, t);
+                    }),
+                    [transaction_model_1.TransactionType.SELL]: () => __awaiter(this, void 0, void 0, function* () {
+                        const currentPosition = yield this.transactionRepository.getCurrentPosition(userId, transactionData.ticker, t);
+                        if (currentPosition < transactionData.quantity) {
+                            throw new Error("Quantidade insuficiente de ações");
+                        }
+                        yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance + transactionData.amount, t);
+                    }),
+                    [transaction_model_1.TransactionType.DEPOSIT]: () => __awaiter(this, void 0, void 0, function* () {
+                        yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance + transactionData.amount, t);
+                    }),
+                    [transaction_model_1.TransactionType.WITHDRAWAL]: () => __awaiter(this, void 0, void 0, function* () {
+                        yield this.validateWithdrawal(portfolio.balance, transactionData.amount);
+                        yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance - transactionData.amount, t);
+                    }),
+                    [transaction_model_1.TransactionType.DIVIDEND]: () => __awaiter(this, void 0, void 0, function* () {
+                        yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance + transactionData.amount, t);
+                    }),
+                };
+                const handler = handlers[transactionData.type];
+                if (!handler) {
+                    throw new Error("Tipo de transação inválido");
+                }
+                yield handler();
+                const transaction = yield this.transactionRepository.create(Object.assign(Object.assign({}, transactionData), { userId, date: new Date() }), t);
+                yield t.commit();
                 return transaction;
-            }));
+            }
+            catch (error) {
+                yield t.rollback();
+                throw error;
+            }
         });
     }
-    deposit(userId, amount) {
+    getTransactionHistory(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (amount <= 0)
-                throw new Error("O valor do depósito deve ser positivo.");
-            return yield sequelize_1.sequelize.transaction((t) => __awaiter(this, void 0, void 0, function* () {
-                const portfolio = yield this.portfolioRepository.findByUserId(userId, t);
-                if (!portfolio)
-                    throw new Error("Carteira não encontrada.");
-                yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance + amount, t);
-                const transaction = yield this.transactionRepository.create({
-                    type: transaction_model_1.TransactionType.DEPOSIT,
-                    amount,
-                    userId,
-                    portfolioId: portfolio.id,
-                }, t);
-                return transaction;
-            }));
+            return this.transactionRepository.findByUserId(userId);
         });
     }
-    withdraw(userId, amount) {
+    validateBuyTransaction(balance, amount) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (amount <= 0)
-                throw new Error("O valor da retirada deve ser positivo.");
-            return yield sequelize_1.sequelize.transaction((t) => __awaiter(this, void 0, void 0, function* () {
-                const portfolio = yield this.portfolioRepository.findByUserId(userId, t);
-                if (!portfolio)
-                    throw new Error("Carteira não encontrada.");
-                if (portfolio.balance < amount)
-                    throw new Error("Saldo insuficiente para a retirada.");
-                yield this.portfolioRepository.updateBalance(portfolio.id, portfolio.balance - amount, t);
-                const transaction = yield this.transactionRepository.create({
-                    type: transaction_model_1.TransactionType.WITHDRAWAL,
-                    amount,
-                    userId,
-                    portfolioId: portfolio.id,
-                }, t);
-                return transaction;
-            }));
+            if (balance < amount)
+                throw new Error("Saldo insuficiente");
         });
     }
-    calculateBalanceImpact(transaction) {
-        switch (transaction.type) {
-            case transaction_model_1.TransactionType.DEPOSIT:
-            case transaction_model_1.TransactionType.SELL:
-            case transaction_model_1.TransactionType.DIVIDEND:
-                return transaction.amount;
-            case transaction_model_1.TransactionType.WITHDRAWAL:
-            case transaction_model_1.TransactionType.BUY:
-                return -transaction.amount;
-            default:
-                return 0;
-        }
+    validateWithdrawal(balance, amount) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (balance < amount)
+                throw new Error("Saldo insuficiente");
+        });
     }
 }
 exports.TransactionService = TransactionService;

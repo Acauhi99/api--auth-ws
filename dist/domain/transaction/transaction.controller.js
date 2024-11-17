@@ -14,119 +14,109 @@ const transaction_service_1 = require("./transaction.service");
 const transaction_model_1 = require("./transaction.model");
 class TransactionController {
     constructor() {
-        this.getTransactions = (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.handleStockTransaction = (req, res, type) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
-                const filters = req.query;
-                const transactions = yield this.transactionService.getTransactionsByUserId(userId, filters);
-                return res.status(200).json(transactions);
-            }
-            catch (error) {
-                return res.status(500).json({ message: error.message });
-            }
-        });
-        this.buyStock = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const userId = req.user.id;
-                const transactionData = Object.assign(Object.assign({}, req.body), { type: transaction_model_1.TransactionType.BUY, portfolioId: req.body.portfolioId });
+                const { ticker, quantity, amount, portfolioId } = req.body;
+                const transactionData = {
+                    type,
+                    ticker,
+                    quantity,
+                    amount,
+                    portfolioId,
+                    price: amount / quantity,
+                };
                 if (!this.isValidStockTransaction(transactionData)) {
                     return res.status(400).json({
-                        message: "Dados incompletos. stockId, quantity e amount são obrigatórios",
+                        message: "Dados incompletos. 'ticker', 'quantity' e 'amount' são obrigatórios",
                     });
                 }
                 const transaction = yield this.transactionService.createTransaction(userId, transactionData);
                 return res.status(201).json(transaction);
             }
             catch (error) {
-                if (error instanceof Error && error.message === "Saldo insuficiente") {
-                    return res.status(400).json({ message: error.message });
+                if (error instanceof Error) {
+                    if (error.message === "Saldo insuficiente" ||
+                        error.message === "Quantidade insuficiente de ações") {
+                        return res.status(400).json({ message: error.message });
+                    }
+                    return res.status(500).json({ message: error.message });
                 }
-                return res.status(500).json({ message: error.message });
+                return res.status(500).json({ message: "Erro interno do servidor" });
             }
         });
-        this.sellStock = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                const userId = req.user.id;
-                const transactionData = Object.assign(Object.assign({}, req.body), { type: transaction_model_1.TransactionType.SELL, portfolioId: req.body.portfolioId });
-                if (!this.isValidStockTransaction(transactionData)) {
-                    return res.status(400).json({
-                        message: "Dados incompletos. stockId, quantity e amount são obrigatórios",
-                    });
-                }
-                const transaction = yield this.transactionService.createTransaction(userId, transactionData);
-                return res.status(201).json(transaction);
-            }
-            catch (error) {
-                if (error instanceof Error &&
-                    error.message === "Quantidade insuficiente de ações") {
-                    return res.status(400).json({ message: error.message });
-                }
-                return res.status(500).json({ message: error.message });
-            }
-        });
+        this.buyStock = (req, res) => {
+            return this.handleStockTransaction(req, res, transaction_model_1.TransactionType.BUY);
+        };
+        this.sellStock = (req, res) => {
+            return this.handleStockTransaction(req, res, transaction_model_1.TransactionType.SELL);
+        };
         this.deposit = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
+                const { amount, portfolioId } = req.body;
                 const transactionData = {
                     type: transaction_model_1.TransactionType.DEPOSIT,
-                    amount: req.body.amount,
-                    portfolioId: req.body.portfolioId,
+                    amount,
+                    portfolioId,
+                    price: 1,
                 };
                 if (!this.isValidMoneyTransaction(transactionData)) {
-                    return res.status(400).json({
-                        message: "Valor de depósito inválido",
-                    });
+                    return res.status(400).json({ message: "Valor de depósito inválido" });
                 }
                 const transaction = yield this.transactionService.createTransaction(userId, transactionData);
                 return res.status(201).json(transaction);
             }
             catch (error) {
-                return res.status(500).json({ message: error.message });
+                if (error instanceof Error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                return res.status(500).json({ message: "Erro interno do servidor" });
             }
         });
         this.withdraw = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
+                const { amount, portfolioId } = req.body;
                 const transactionData = {
                     type: transaction_model_1.TransactionType.WITHDRAWAL,
-                    amount: req.body.amount,
-                    portfolioId: req.body.portfolioId,
+                    amount,
+                    portfolioId,
+                    price: 1,
                 };
                 if (!this.isValidMoneyTransaction(transactionData)) {
-                    return res.status(400).json({
-                        message: "Valor de saque inválido",
-                    });
+                    return res.status(400).json({ message: "Valor de saque inválido" });
                 }
                 const transaction = yield this.transactionService.createTransaction(userId, transactionData);
                 return res.status(201).json(transaction);
             }
             catch (error) {
-                if (error instanceof Error && error.message === "Saldo insuficiente") {
-                    return res.status(400).json({ message: error.message });
+                if (error instanceof Error) {
+                    if (error.message === "Saldo insuficiente") {
+                        return res.status(400).json({ message: error.message });
+                    }
+                    return res.status(500).json({ message: error.message });
                 }
-                return res.status(500).json({ message: error.message });
+                return res.status(500).json({ message: "Erro interno do servidor" });
             }
         });
-        this.getDetailedHistory = (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.getTransactionHistory = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userId = req.user.id;
-                const filters = {
-                    startDate: req.query.startDate,
-                    endDate: req.query.endDate,
-                    type: req.query.type,
-                    stockId: req.query.stockId,
-                };
-                const history = yield this.transactionService.getDetailedHistory(userId, filters);
-                return res.status(200).json(history);
+                const transactions = yield this.transactionService.getTransactionHistory(userId);
+                return res.status(200).json(transactions);
             }
             catch (error) {
-                return res.status(500).json({ message: error.message });
+                if (error instanceof Error) {
+                    return res.status(500).json({ message: error.message });
+                }
+                return res.status(500).json({ message: "Erro interno do servidor" });
             }
         });
         this.transactionService = new transaction_service_1.TransactionService();
     }
     isValidStockTransaction(data) {
-        return !!(data.stockId &&
+        return !!(data.ticker &&
             data.quantity &&
             data.amount &&
             data.amount > 0 &&

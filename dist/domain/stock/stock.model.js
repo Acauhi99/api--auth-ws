@@ -14,7 +14,6 @@ var StockType;
 class Stock extends sequelize_1.Model {
     static associate(models) {
         Stock.hasMany(models.Transaction, { foreignKey: "stockId" });
-        Stock.hasMany(models.Dividend, { foreignKey: "stockId" });
     }
     static initModel(sequelize) {
         Stock.init({

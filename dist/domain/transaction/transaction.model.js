@@ -25,59 +25,49 @@ class Transaction extends sequelize_1.Model {
             type: {
                 type: sequelize_1.DataTypes.ENUM(...Object.values(TransactionType)),
                 allowNull: false,
-                validate: {
-                    isIn: {
-                        args: [Object.values(TransactionType)],
-                        msg: "Tipo de transação inválido.",
-                    },
-                },
             },
-            amount: {
-                type: sequelize_1.DataTypes.FLOAT,
+            userId: {
+                type: sequelize_1.DataTypes.STRING,
                 allowNull: false,
+                references: { model: "users", key: "id" },
+            },
+            portfolioId: {
+                type: sequelize_1.DataTypes.STRING,
+                allowNull: false,
+                references: { model: "portfolios", key: "id" },
+            },
+            ticker: {
+                type: sequelize_1.DataTypes.STRING(6),
+                allowNull: true,
+                references: { model: "stocks", key: "ticker" },
             },
             quantity: {
                 type: sequelize_1.DataTypes.FLOAT,
                 allowNull: true,
             },
-            userId: {
-                type: sequelize_1.DataTypes.STRING,
+            price: {
+                type: sequelize_1.DataTypes.DECIMAL(10, 2),
                 allowNull: false,
-                references: {
-                    model: "users",
-                    key: "id",
-                },
             },
-            portfolioId: {
-                type: sequelize_1.DataTypes.STRING,
+            amount: {
+                type: sequelize_1.DataTypes.DECIMAL(10, 2),
                 allowNull: false,
-                references: {
-                    model: "portfolios",
-                    key: "id",
-                },
             },
-            stockId: {
-                type: sequelize_1.DataTypes.STRING,
-                allowNull: true,
-                references: {
-                    model: "stocks",
-                    key: "id",
-                },
+            date: {
+                type: sequelize_1.DataTypes.DATE,
+                allowNull: false,
+                defaultValue: sequelize_1.DataTypes.NOW,
             },
         }, {
             sequelize,
             tableName: "transactions",
             timestamps: true,
             indexes: [
-                {
-                    fields: ["userId"],
-                },
-                {
-                    fields: ["portfolioId"],
-                },
-                {
-                    fields: ["stockId"],
-                },
+                { fields: ["userId"] },
+                { fields: ["portfolioId"] },
+                { fields: ["ticker"] },
+                { fields: ["type"] },
+                { fields: ["date"] },
             ],
         });
         return Transaction;

@@ -31,14 +31,13 @@ app.get("/", (_, res) => {
 // Registro das rotas
 app.use("/api/auth", domain_1.authRouter);
 app.use("/api/user", domain_1.userRouter);
-app.use("/api/dividend", domain_1.dividendRouter);
 app.use("/api/stock", domain_1.stockRouter);
 app.use("/api/transaction", domain_1.transactionRouter);
 app.use("/api/portfolio", domain_1.portfolioRouter);
 const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     yield (0, sequelize_1.connectDB)();
     try {
-        yield sequelize_1.sequelize.sync({ alter: true });
+        yield sequelize_1.sequelize.sync({ alter: false });
         console.log("Models sincronizados com sucesso.");
         app.listen(config_1.PORT, () => {
             console.log(`Server is running on http://localhost:${config_1.PORT}`);
