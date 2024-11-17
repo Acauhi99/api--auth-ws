@@ -1,1 +1,1 @@
-export * from "./portfolio-info.dto";
+export * from "./portfolio-response.dto";
