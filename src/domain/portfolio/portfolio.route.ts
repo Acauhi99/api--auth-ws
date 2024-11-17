@@ -9,24 +9,16 @@ portfolioRouter.use(authenticateHandler);
 
 portfolioRouter.post("/", asyncHandler(portfolioController.createPortfolio));
 
+portfolioRouter.get("/", asyncHandler(portfolioController.getPortfolioDetails));
+
 portfolioRouter.get(
-  "/overview",
-  asyncHandler(portfolioController.getPortfolioOverview)
+  "/positions",
+  asyncHandler(portfolioController.getPositions)
 );
 
 portfolioRouter.get(
-  "/performance/monthly",
-  asyncHandler(portfolioController.getMonthlyPerformance)
-);
-
-portfolioRouter.get(
-  "/dividends",
-  asyncHandler(portfolioController.getDividendsHistory)
-);
-
-portfolioRouter.get(
-  "/history",
-  asyncHandler(portfolioController.getPortfolioHistory)
+  "/performance",
+  asyncHandler(portfolioController.getPerformance)
 );
 
 export { portfolioRouter };

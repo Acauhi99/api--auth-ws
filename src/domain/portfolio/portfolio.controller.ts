@@ -20,61 +20,54 @@ export class PortfolioController {
         }
         return res.status(500).json({ message: error.message });
       }
-      return res.status(500).json({ message: "An unknown error occurred" });
+      return res.status(500).json({ message: "Ocorreu um erro desconhecido" });
     }
   };
 
-  getPortfolioOverview = async (
+  getPortfolioDetails = async (
     req: Request,
     res: Response
   ): Promise<Response> => {
     try {
       const userId = req.user!.id;
-      const overview = await this.portfolioService.getOverview(userId);
-      return res.status(200).json(overview);
-    } catch (error) {
-      return res.status(500).json({ message: (error as Error).message });
-    }
-  };
-
-  getMonthlyPerformance = async (
-    req: Request,
-    res: Response
-  ): Promise<Response> => {
-    try {
-      const userId = req.user!.id;
-      const performance = await this.portfolioService.getMonthlyPerformance(
+      const portfolioDetails = await this.portfolioService.getPortfolioDetails(
         userId
       );
+      return res.status(200).json(portfolioDetails);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.message === "Portfólio não encontrado") {
+          return res.status(404).json({ message: error.message });
+        }
+        return res.status(500).json({ message: error.message });
+      }
+      return res.status(500).json({ message: "Ocorreu um erro desconhecido" });
+    }
+  };
+
+  getPositions = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const userId = req.user!.id;
+      const positions = await this.portfolioService.getPositions(userId);
+      return res.status(200).json(positions);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return res.status(500).json({ message: error.message });
+      }
+      return res.status(500).json({ message: "Ocorreu um erro desconhecido" });
+    }
+  };
+
+  getPerformance = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const userId = req.user!.id;
+      const performance = await this.portfolioService.getPerformance(userId);
       return res.status(200).json(performance);
-    } catch (error) {
-      return res.status(500).json({ message: (error as Error).message });
-    }
-  };
-
-  getDividendsHistory = async (
-    req: Request,
-    res: Response
-  ): Promise<Response> => {
-    try {
-      const userId = req.user!.id;
-      const dividends = await this.portfolioService.getDividendsHistory(userId);
-      return res.status(200).json(dividends);
-    } catch (error) {
-      return res.status(500).json({ message: (error as Error).message });
-    }
-  };
-
-  getPortfolioHistory = async (
-    req: Request,
-    res: Response
-  ): Promise<Response> => {
-    try {
-      const userId = req.user!.id;
-      const history = await this.portfolioService.getPortfolioHistory(userId);
-      return res.status(200).json(history);
-    } catch (error) {
-      return res.status(500).json({ message: (error as Error).message });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return res.status(500).json({ message: error.message });
+      }
+      return res.status(500).json({ message: "Ocorreu um erro desconhecido" });
     }
   };
 }
