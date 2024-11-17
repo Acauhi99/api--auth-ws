@@ -13,23 +13,22 @@ export enum TransactionType {
 export interface TransactionAttributes {
   id: string;
   type: TransactionType;
-  amount: number;
-  quantity?: number;
   userId: string;
   portfolioId: string;
-  stockId?: string;
+  ticker?: string;
+  quantity?: number;
+  price: number;
+  amount: number;
+  date: Date;
   createdAt?: Date;
   updatedAt?: Date;
-}
-
-export interface TransactionWithStock extends Transaction {
   stock?: Stock;
 }
 
 export interface TransactionCreationAttributes
   extends Optional<
     TransactionAttributes,
-    "id" | "quantity" | "stockId" | "createdAt" | "updatedAt"
+    "id" | "quantity" | "ticker" | "createdAt" | "updatedAt"
   > {}
 
 export class Transaction
@@ -38,13 +37,16 @@ export class Transaction
 {
   public id!: string;
   public type!: TransactionType;
-  public amount!: number;
-  public quantity?: number;
   public userId!: string;
   public portfolioId!: string;
-  public stockId?: string;
+  public ticker?: string;
+  public quantity?: number;
+  public price!: number;
+  public amount!: number;
+  public date!: Date;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public stock?: Stock;
 
   static initModel(sequelize: Sequelize): typeof Transaction {
     Transaction.init(
@@ -57,44 +59,38 @@ export class Transaction
         type: {
           type: DataTypes.ENUM(...Object.values(TransactionType)),
           allowNull: false,
-          validate: {
-            isIn: {
-              args: [Object.values(TransactionType)],
-              msg: "Tipo de transação inválido.",
-            },
-          },
         },
-        amount: {
-          type: DataTypes.FLOAT,
+        userId: {
+          type: DataTypes.STRING,
           allowNull: false,
+          references: { model: "users", key: "id" },
+        },
+        portfolioId: {
+          type: DataTypes.STRING,
+          allowNull: false,
+          references: { model: "portfolios", key: "id" },
+        },
+        ticker: {
+          type: DataTypes.STRING(6),
+          allowNull: true,
+          references: { model: "stocks", key: "ticker" },
         },
         quantity: {
           type: DataTypes.FLOAT,
           allowNull: true,
         },
-        userId: {
-          type: DataTypes.STRING,
+        price: {
+          type: DataTypes.DECIMAL(10, 2),
           allowNull: false,
-          references: {
-            model: "users",
-            key: "id",
-          },
         },
-        portfolioId: {
-          type: DataTypes.STRING,
+        amount: {
+          type: DataTypes.DECIMAL(10, 2),
           allowNull: false,
-          references: {
-            model: "portfolios",
-            key: "id",
-          },
         },
-        stockId: {
-          type: DataTypes.STRING,
-          allowNull: true,
-          references: {
-            model: "stocks",
-            key: "id",
-          },
+        date: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: DataTypes.NOW,
         },
       },
       {
@@ -102,15 +98,11 @@ export class Transaction
         tableName: "transactions",
         timestamps: true,
         indexes: [
-          {
-            fields: ["userId"],
-          },
-          {
-            fields: ["portfolioId"],
-          },
-          {
-            fields: ["stockId"],
-          },
+          { fields: ["userId"] },
+          { fields: ["portfolioId"] },
+          { fields: ["ticker"] },
+          { fields: ["type"] },
+          { fields: ["date"] },
         ],
       }
     );

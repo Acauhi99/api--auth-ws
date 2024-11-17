@@ -1,7 +1,6 @@
 import kuid from "kuid";
 import { DataTypes, Model, Optional, Sequelize } from "sequelize";
 import { Transaction } from "../transaction";
-import { Dividend } from "../dividend";
 
 export enum StockType {
   STOCK = "STOCK",
@@ -10,7 +9,6 @@ export enum StockType {
 
 export interface StockRelations {
   transactions?: Transaction[];
-  dividends?: Dividend[];
 }
 
 export interface StockAttributes {
@@ -38,7 +36,6 @@ export class Stock
 
   static associate(models: any) {
     Stock.hasMany(models.Transaction, { foreignKey: "stockId" });
-    Stock.hasMany(models.Dividend, { foreignKey: "stockId" });
   }
 
   static initModel(sequelize: Sequelize): typeof Stock {
