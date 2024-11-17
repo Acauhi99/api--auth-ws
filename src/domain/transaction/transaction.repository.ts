@@ -70,4 +70,40 @@ export class TransactionRepository {
       transaction,
     });
   }
+
+  async findByPortfolioIdAndType(
+    portfolioId: string,
+    types: TransactionType[],
+    transaction?: SequelizeTransaction
+  ): Promise<Transaction[]> {
+    return Transaction.findAll({
+      where: {
+        portfolioId,
+        type: {
+          [Op.in]: types,
+        },
+      },
+      include: ["stock"],
+      order: [["date", "DESC"]],
+      transaction,
+    });
+  }
+
+  async findByPortfolioIdAfterDate(
+    portfolioId: string,
+    date: Date,
+    types: TransactionType[] = [],
+    transaction?: SequelizeTransaction
+  ): Promise<Transaction[]> {
+    return Transaction.findAll({
+      where: {
+        portfolioId,
+        type: types.length > 0 ? { [Op.in]: types } : undefined,
+        date: {
+          [Op.gte]: date,
+        },
+      },
+      transaction,
+    });
+  }
 }
