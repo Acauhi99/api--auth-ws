@@ -26,7 +26,7 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json());
 app.get("/", (_, res) => {
-    res.json({ message: "Bem vindo à API de Auth" });
+    res.json({ message: "Bem vindo à API" });
 });
 // Registro das rotas
 app.use("/api/auth", domain_1.authRouter);

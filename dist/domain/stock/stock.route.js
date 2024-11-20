@@ -7,6 +7,5 @@ const middlewares_1 = require("../../middlewares");
 const stockRouter = (0, express_1.Router)();
 exports.stockRouter = stockRouter;
 const stockController = new stock_controller_1.StockController();
-stockRouter.use(middlewares_1.authenticateHandler);
 stockRouter.get("/market/available", (0, middlewares_1.asyncHandler)(stockController.getAvailableStocks));
 stockRouter.get("/market/:ticker", (0, middlewares_1.asyncHandler)(stockController.getStockInfo));
