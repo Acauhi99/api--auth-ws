@@ -15,7 +15,7 @@ export class PortfolioController {
       return res.status(201).json(portfolio);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        if (error.message === "Portfolio already exists") {
+        if (error.message === "Portfólio já existe para este usuário") {
           return res.status(409).json({ message: error.message });
         }
         return res.status(500).json({ message: error.message });

@@ -31,7 +31,7 @@ async function populateDB() {
         password: await bcrypt.hash("123456", 10),
       },
     ]);
-    console.log("Users created successfully");
+    console.log("Usuários criados com sucesso");
 
     // Create stocks
     const stocks = await Stock.bulkCreate([
@@ -54,7 +54,7 @@ async function populateDB() {
         currentPrice: 27.8,
       },
     ]);
-    console.log("Stocks created successfully");
+    console.log("Ações criadas com sucesso");
 
     // Create portfolios
     const portfolios = await Promise.all(
@@ -66,7 +66,7 @@ async function populateDB() {
         })
       )
     );
-    console.log("Portfolios created successfully");
+    console.log("Carteiras criadas com sucesso");
 
     // Create transactions
     const transactions = [];
@@ -137,7 +137,7 @@ async function populateDB() {
     }
 
     await Transaction.bulkCreate(transactions);
-    console.log("Transactions created successfully");
+    console.log("Transações criadas com sucesso");
 
     // Update portfolio balances
     for (const portfolio of portfolios) {
@@ -161,10 +161,10 @@ async function populateDB() {
       await portfolio.update({ balance });
     }
 
-    console.log("Portfolio balances updated successfully");
-    console.log("Database populated successfully!");
+    console.log("Saldos das carteiras atualizados com sucesso");
+    console.log("Banco de dados populado com sucesso!");
   } catch (error) {
-    console.error("Error populating database:", error);
+    console.error("Erro ao popular banco de dados:", error);
     process.exit(1);
   } finally {
     await sequelize.close();
@@ -176,10 +176,10 @@ async function populateDB() {
 sequelize
   .authenticate()
   .then(() => {
-    console.log("Connected to database");
+    console.log("Conectado ao banco de dados");
     populateDB();
   })
   .catch((err) => {
-    console.error("Unable to connect to database:", err);
+    console.error("Não foi possível conectar ao banco de dados:", err);
     process.exit(1);
   });

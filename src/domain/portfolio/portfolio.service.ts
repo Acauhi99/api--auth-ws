@@ -23,7 +23,7 @@ export class PortfolioService {
     );
 
     if (existingPortfolio) {
-      throw new Error("Portfolio already exists");
+      throw new Error("Portfólio já existe para este usuário");
     }
 
     const t = await sequelize.transaction();
