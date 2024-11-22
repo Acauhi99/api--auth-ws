@@ -79,7 +79,7 @@ export class StockService {
         {
           params: {
             token: BRAPI_TOKEN,
-            range: "5d",
+            range: "3mo",
             interval: "1d",
             fundamental: true,
           },
