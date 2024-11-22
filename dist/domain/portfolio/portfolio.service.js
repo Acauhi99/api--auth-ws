@@ -25,7 +25,7 @@ class PortfolioService {
         return __awaiter(this, void 0, void 0, function* () {
             const existingPortfolio = yield this.portfolioRepository.findByUserId(userId);
             if (existingPortfolio) {
-                throw new Error("Portfolio already exists");
+                throw new Error("Portfólio já existe para este usuário");
             }
             const t = yield sequelize_1.sequelize.transaction();
             try {

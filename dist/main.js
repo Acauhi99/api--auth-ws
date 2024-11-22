@@ -37,7 +37,7 @@ app.use("/api/portfolio", domain_1.portfolioRouter);
 const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     yield (0, sequelize_1.connectDB)();
     try {
-        yield sequelize_1.sequelize.sync({ alter: false });
+        yield sequelize_1.sequelize.sync({ alter: true });
         console.log("Models sincronizados com sucesso.");
         app.listen(config_1.PORT, () => {
             console.log(`Server is running on http://localhost:${config_1.PORT}`);

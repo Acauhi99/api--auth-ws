@@ -44,7 +44,7 @@ function populateDB() {
                     password: yield bcryptjs_1.default.hash("123456", 10),
                 },
             ]);
-            console.log("Users created successfully");
+            console.log("Usuários criados com sucesso");
             // Create stocks
             const stocks = yield stock_1.Stock.bulkCreate([
                 {
@@ -66,14 +66,14 @@ function populateDB() {
                     currentPrice: 27.8,
                 },
             ]);
-            console.log("Stocks created successfully");
+            console.log("Ações criadas com sucesso");
             // Create portfolios
             const portfolios = yield Promise.all(users.map((user) => portfolio_1.Portfolio.create({
                 id: (0, kuid_1.default)(),
                 userId: user.id,
                 balance: 0,
             })));
-            console.log("Portfolios created successfully");
+            console.log("Carteiras criadas com sucesso");
             // Create transactions
             const transactions = [];
             for (let i = 0; i < users.length; i++) {
@@ -137,7 +137,7 @@ function populateDB() {
                 });
             }
             yield transaction_1.Transaction.bulkCreate(transactions);
-            console.log("Transactions created successfully");
+            console.log("Transações criadas com sucesso");
             // Update portfolio balances
             for (const portfolio of portfolios) {
                 const userTransactions = transactions.filter((t) => t.portfolioId === portfolio.id);
@@ -156,11 +156,11 @@ function populateDB() {
                 }, 0);
                 yield portfolio.update({ balance });
             }
-            console.log("Portfolio balances updated successfully");
-            console.log("Database populated successfully!");
+            console.log("Saldos das carteiras atualizados com sucesso");
+            console.log("Banco de dados populado com sucesso!");
         }
         catch (error) {
-            console.error("Error populating database:", error);
+            console.error("Erro ao popular banco de dados:", error);
             process.exit(1);
         }
         finally {
@@ -173,10 +173,10 @@ function populateDB() {
 sequelize_1.sequelize
     .authenticate()
     .then(() => {
-    console.log("Connected to database");
+    console.log("Conectado ao banco de dados");
     populateDB();
 })
     .catch((err) => {
-    console.error("Unable to connect to database:", err);
+    console.error("Não foi possível conectar ao banco de dados:", err);
     process.exit(1);
 });
