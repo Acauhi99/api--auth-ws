@@ -75,7 +75,7 @@ class StockService {
                 const response = yield axios_1.default.get(`${config_1.BRAPI_URL}/api/quote/${ticker}`, {
                     params: {
                         token: config_1.BRAPI_TOKEN,
-                        range: "3mo",
+                        range: "1mo",
                         interval: "1d",
                         fundamental: true,
                     },
